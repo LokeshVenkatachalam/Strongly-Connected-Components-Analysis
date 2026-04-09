@@ -7,7 +7,7 @@ LIBDIR = ../gm_graph/lib
 OUTDIR = ./
 LIB = gmgraph
 LFLAGS = -L$(LIBDIR) -l$(LIB)
-CFLAGS = -O3 -g -I. -I$(INCDIR) -I. -fopenmp  -std=gnu++0x
+CFLAGS = -O3 -g -I. -I$(INCDIR) -I. -fopenmp  -std=gnu++0x -DGM_EDGE64
 INCFILES = $(shell ls $(INCDIR))
 H_FILES = $(addprefix $(INCDIR)/, $(INCFILES))
 
