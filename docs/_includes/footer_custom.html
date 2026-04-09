@@ -1,4 +1,15 @@
 <div class="site-footer">
-  <span class="site-footer-maintainer">Maintained by <a href="https://github.com/LokeshVenkatachalam">Lokesh Venkatachalam</a></span>
-  This site uses <a href="https://just-the-docs.github.io/just-the-docs/">Just the Docs</a>, a documentation theme for Jekyll.
+  <!-- This replaces the mobile footer only. Sidebar footer is handled by JS below. -->
 </div>
+<script>
+// Inject "Maintained by" into the LEFT sidebar footer (above "This site uses...")
+document.addEventListener('DOMContentLoaded', function() {
+  var sidebarFooters = document.querySelectorAll('.side-bar .site-footer');
+  sidebarFooters.forEach(function(f) {
+    var maintainer = document.createElement('span');
+    maintainer.className = 'site-footer-maintainer';
+    maintainer.innerHTML = 'Maintained by <a href="https://github.com/LokeshVenkatachalam">Lokesh Venkatachalam</a>';
+    f.insertBefore(maintainer, f.firstChild);
+  });
+});
+</script>
