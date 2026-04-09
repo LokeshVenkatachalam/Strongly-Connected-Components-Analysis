@@ -1,25 +1,31 @@
 /* Custom overrides for SCC Analysis site */
 
 /* ========================================
-   SIDEBAR: fits nav text, no clipping
-   Left column ~15rem, content fills rest
+   SIDEBAR: compact, enough for nav text
+   Override BOTH theme breakpoints (50rem AND 66.5rem)
    ======================================== */
 @media (min-width: 50rem) {
   .side-bar {
     width: 15.5rem !important;
     min-width: 15.5rem !important;
+    max-width: 15.5rem !important;
     padding-left: 0.5rem !important;
   }
-  .main {
+  .side-bar + .main {
     margin-left: 15.5rem !important;
   }
 }
 
-/* Hide the built-in theme footer (we use footer_custom.html instead) */
-/* Actually: keep the sidebar footer visible, hide the main-content one */
-.main-content ~ footer > .site-footer,
-.main-content ~ footer > .d-md-none {
-  display: none !important;
+/* Override the theme's wider breakpoint that expands sidebar and centers content */
+@media (min-width: 66.5rem) {
+  .side-bar {
+    width: 15.5rem !important;
+    min-width: 15.5rem !important;
+    max-width: 15.5rem !important;
+  }
+  .side-bar + .main {
+    margin-left: 15.5rem !important;
+  }
 }
 
 .site-nav .nav-list {
@@ -42,30 +48,32 @@
 }
 
 /* ========================================
-   MAIN CONTENT: fill entire right side
-   No max-width cap — use all available space
+   MAIN CONTENT: fill ALL available width
+   Override theme centering at every breakpoint
    ======================================== */
 .main-content-wrap {
   max-width: 100% !important;
-  padding: 2rem 2.5rem !important;
+  padding: 2rem 3rem 2rem 2.5rem !important;
 }
 
 .main-content {
-  max-width: none !important;
+  max-width: 100% !important;
+  width: 100% !important;
 }
 
 /* ========================================
-   TABLES: programmer-friendly dark tables
+   TABLES: full width, programmer-friendly
    ======================================== */
 .table-wrapper {
   overflow-x: auto;
   margin: 1rem 0;
+  max-width: 100% !important;
 }
 
 table {
   font-size: 0.82rem !important;
   border-collapse: collapse !important;
-  width: 100%;
+  width: 100% !important;
 }
 
 table th {
@@ -87,13 +95,12 @@ table tr:hover td {
   background-color: rgba(255, 255, 255, 0.04) !important;
 }
 
-/* Highlight winning cells */
 table td strong {
   color: #4ade80 !important;
 }
 
 /* ========================================
-   CODE & PRE: better for programmers
+   CODE & PRE
    ======================================== */
 code {
   font-size: 0.82em !important;
@@ -108,7 +115,7 @@ pre {
 }
 
 /* ========================================
-   HEADINGS: cleaner hierarchy
+   HEADINGS
    ======================================== */
 h1 { font-size: 2rem !important; margin-top: 0 !important; }
 h2 { font-size: 1.5rem !important; margin-top: 2.5rem !important; padding-bottom: 0.3rem; border-bottom: 1px solid rgba(255,255,255,0.1); }
@@ -116,7 +123,7 @@ h3 { font-size: 1.15rem !important; margin-top: 1.8rem !important; }
 h4 { font-size: 1rem !important; }
 
 /* ========================================
-   LISTS: tighter, cleaner
+   LISTS
    ======================================== */
 ul, ol {
   padding-left: 1.5rem !important;
@@ -128,7 +135,7 @@ li {
 }
 
 /* ========================================
-   DARK/LIGHT TOGGLE SWITCH
+   DARK/LIGHT TOGGLE
    ======================================== */
 .theme-toggle {
   position: fixed;
@@ -159,7 +166,7 @@ li {
 }
 
 /* ========================================
-   LIGHT MODE overrides (applied via JS)
+   LIGHT MODE
    ======================================== */
 body.light-mode {
   --body-background-color: #ffffff;
@@ -170,60 +177,30 @@ body.light-mode {
   --border-color: #eeebee;
   --link-color: #2563eb;
   --body-heading-color: #27262b;
-  --table-background-color: #ffffff;
-  --feedback-color: rgba(0,0,0,0.04);
 }
 
-body.light-mode .side-bar {
-  background-color: #f5f6fa !important;
-}
-
-body.light-mode .main {
-  background-color: #ffffff !important;
-  color: #27262b !important;
-}
-
+body.light-mode .side-bar { background-color: #f5f6fa !important; }
+body.light-mode .main { background-color: #ffffff !important; color: #27262b !important; }
 body.light-mode h1, body.light-mode h2, body.light-mode h3,
-body.light-mode h4, body.light-mode h5, body.light-mode h6 {
-  color: #27262b !important;
-}
-
-body.light-mode h2 {
-  border-bottom-color: rgba(0,0,0,0.1);
-}
-
-body.light-mode a {
-  color: #2563eb !important;
-}
-
-body.light-mode code {
-  background-color: #f0f0f0 !important;
-  color: #d63384 !important;
-}
-
-body.light-mode table td strong {
-  color: #16a34a !important;
-}
-
-body.light-mode table tr:hover td {
-  background-color: rgba(0, 0, 0, 0.03) !important;
-}
-
-body.light-mode .theme-toggle {
-  background: rgba(200,200,200,0.4);
-  border-color: rgba(0,0,0,0.15);
-  color: #333;
-}
-
-body.light-mode .site-footer,
-body.light-mode .site-footer a {
-  color: #666 !important;
-}
+body.light-mode h4, body.light-mode h5, body.light-mode h6 { color: #27262b !important; }
+body.light-mode h2 { border-bottom-color: rgba(0,0,0,0.1); }
+body.light-mode a { color: #2563eb !important; }
+body.light-mode code { background-color: #f0f0f0 !important; color: #d63384 !important; }
+body.light-mode table td strong { color: #16a34a !important; }
+body.light-mode table tr:hover td { background-color: rgba(0,0,0,0.03) !important; }
+body.light-mode .theme-toggle { background: rgba(200,200,200,0.4); border-color: rgba(0,0,0,0.15); color: #333; }
+body.light-mode .site-footer, body.light-mode .site-footer a { color: #666 !important; }
 
 /* ========================================
-   FOOTER: left sidebar, bottom
+   FOOTER: left sidebar only
+   Hide ALL footers in the right content area
    ======================================== */
-.site-footer {
+footer .site-footer,
+footer .d-md-none {
+  display: none !important;
+}
+
+.side-bar .site-footer {
   font-size: 0.7rem !important;
   line-height: 1.6;
   padding: 0.75rem 0.75rem !important;
