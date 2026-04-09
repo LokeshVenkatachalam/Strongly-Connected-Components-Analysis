@@ -1,26 +1,77 @@
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-  // Create toggle button
+
+  // === DARK/LIGHT TOGGLE ===
   var toggle = document.createElement('button');
   toggle.className = 'theme-toggle';
   toggle.setAttribute('aria-label', 'Toggle light/dark mode');
-  toggle.innerHTML = '<span class="theme-toggle-icon">☀️</span><span>Light</span>';
-  document.body.appendChild(toggle);
-
-  // Check saved preference
-  var isLight = localStorage.getItem('theme') === 'light';
-  if (isLight) {
-    document.body.classList.add('light-mode');
-    toggle.innerHTML = '<span class="theme-toggle-icon">🌙</span><span>Dark</span>';
+  function setToggleLabel(light) {
+    toggle.innerHTML = light
+      ? '<span class="theme-toggle-icon">🌙</span><span>Dark</span>'
+      : '<span class="theme-toggle-icon">☀️</span><span>Light</span>';
   }
-
+  var isLight = localStorage.getItem('theme') === 'light';
+  if (isLight) document.body.classList.add('light-mode');
+  setToggleLabel(isLight);
+  document.body.appendChild(toggle);
   toggle.addEventListener('click', function() {
     document.body.classList.toggle('light-mode');
     var nowLight = document.body.classList.contains('light-mode');
     localStorage.setItem('theme', nowLight ? 'light' : 'dark');
-    toggle.innerHTML = nowLight
-      ? '<span class="theme-toggle-icon">🌙</span><span>Dark</span>'
-      : '<span class="theme-toggle-icon">☀️</span><span>Light</span>';
+    setToggleLabel(nowLight);
   });
+
+  // === FOOTER: inject "Maintained by" into sidebar ===
+  var sidebarFooter = document.querySelector('header.side-bar .d-md-block.site-footer')
+    || document.querySelector('.side-bar .site-footer');
+  if (sidebarFooter && !sidebarFooter.querySelector('.site-footer-maintainer')) {
+    var m = document.createElement('div');
+    m.className = 'site-footer-maintainer';
+    m.innerHTML = 'Maintained by <a href="https://github.com/LokeshVenkatachalam">Lokesh Venkatachalam</a>';
+    sidebarFooter.insertBefore(m, sidebarFooter.firstChild);
+    sidebarFooter.style.cssText = 'display:block!important;';
+  }
+
+  // === SORTABLE TABLES ===
+  document.querySelectorAll('table').forEach(function(table) {
+    var headers = table.querySelectorAll('th');
+    if (headers.length < 2) return;
+    headers.forEach(function(th, colIdx) {
+      th.classList.add('sortable');
+      th.addEventListener('click', function() {
+        var tbody = table.querySelector('tbody') || table;
+        var rows = Array.from(tbody.querySelectorAll('tr'));
+        if (rows.length < 2) return;
+
+        // Determine sort direction
+        var asc = !th.classList.contains('sort-asc');
+        headers.forEach(function(h) { h.classList.remove('sort-asc','sort-desc'); });
+        th.classList.add(asc ? 'sort-asc' : 'sort-desc');
+
+        rows.sort(function(a, b) {
+          var ca = a.children[colIdx], cb = b.children[colIdx];
+          if (!ca || !cb) return 0;
+          var va = ca.textContent.trim(), vb = cb.textContent.trim();
+          // Try numeric (strip commas, ×, s, ms, %, B, M, K, —)
+          var na = parseFloat(va.replace(/[,×xsmBMKGT%—\s]/g, ''));
+          var nb = parseFloat(vb.replace(/[,×xsmBMKGT%—\s]/g, ''));
+          // Handle multipliers
+          if (/[\d.]+B$/i.test(va)) na = parseFloat(va) * 1e9;
+          else if (/[\d.]+M$/i.test(va)) na = parseFloat(va) * 1e6;
+          else if (/[\d.]+K$/i.test(va)) na = parseFloat(va) * 1e3;
+          if (/[\d.]+B$/i.test(vb)) nb = parseFloat(vb) * 1e9;
+          else if (/[\d.]+M$/i.test(vb)) nb = parseFloat(vb) * 1e6;
+          else if (/[\d.]+K$/i.test(vb)) nb = parseFloat(vb) * 1e3;
+          // — or SKIP or FAIL sorts last
+          if (va === '—' || va === 'SKIP' || va === 'FAIL') na = Infinity;
+          if (vb === '—' || vb === 'SKIP' || vb === 'FAIL') nb = Infinity;
+          if (!isNaN(na) && !isNaN(nb)) return asc ? na - nb : nb - na;
+          return asc ? va.localeCompare(vb) : vb.localeCompare(va);
+        });
+        rows.forEach(function(r) { tbody.appendChild(r); });
+      });
+    });
+  });
+
 });
 </script>
