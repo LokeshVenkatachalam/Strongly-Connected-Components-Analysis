@@ -1,31 +1,27 @@
 /* Custom overrides for SCC Analysis site */
 
 /* ========================================
-   SIDEBAR: compact, enough for nav text
-   Override BOTH theme breakpoints (50rem AND 66.5rem)
+   FORCE LAYOUT: sidebar 15.5rem, content fills rest
+   Use high-specificity selectors to beat ALL theme breakpoints
    ======================================== */
-@media (min-width: 50rem) {
-  .side-bar {
-    width: 15.5rem !important;
-    min-width: 15.5rem !important;
-    max-width: 15.5rem !important;
-    padding-left: 0.5rem !important;
-  }
-  .side-bar + .main {
-    margin-left: 15.5rem !important;
-  }
+
+/* Sidebar: fixed narrow width at all screen sizes */
+.side-bar {
+  width: 15.5rem !important;
+  min-width: 15.5rem !important;
+  max-width: 15.5rem !important;
+  padding-left: 0.5rem !important;
 }
 
-/* Override the theme's wider breakpoint that expands sidebar and centers content */
-@media (min-width: 66.5rem) {
-  .side-bar {
-    width: 15.5rem !important;
-    min-width: 15.5rem !important;
-    max-width: 15.5rem !important;
-  }
-  .side-bar + .main {
-    margin-left: 15.5rem !important;
-  }
+/* Sidebar internals: match sidebar width */
+.site-nav, .site-header, .side-bar > .site-footer {
+  width: 15.5rem !important;
+}
+
+/* Main content: margin matches sidebar, fills rest */
+.side-bar ~ .main,
+.side-bar + .main {
+  margin-left: 15.5rem !important;
 }
 
 .site-nav .nav-list {
