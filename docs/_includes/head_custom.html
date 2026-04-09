@@ -1,0 +1,26 @@
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Create toggle button
+  var toggle = document.createElement('button');
+  toggle.className = 'theme-toggle';
+  toggle.setAttribute('aria-label', 'Toggle light/dark mode');
+  toggle.innerHTML = '<span class="theme-toggle-icon">☀️</span><span>Light</span>';
+  document.body.appendChild(toggle);
+
+  // Check saved preference
+  var isLight = localStorage.getItem('theme') === 'light';
+  if (isLight) {
+    document.body.classList.add('light-mode');
+    toggle.innerHTML = '<span class="theme-toggle-icon">🌙</span><span>Dark</span>';
+  }
+
+  toggle.addEventListener('click', function() {
+    document.body.classList.toggle('light-mode');
+    var nowLight = document.body.classList.contains('light-mode');
+    localStorage.setItem('theme', nowLight ? 'light' : 'dark');
+    toggle.innerHTML = nowLight
+      ? '<span class="theme-toggle-icon">🌙</span><span>Dark</span>'
+      : '<span class="theme-toggle-icon">☀️</span><span>Light</span>';
+  });
+});
+</script>

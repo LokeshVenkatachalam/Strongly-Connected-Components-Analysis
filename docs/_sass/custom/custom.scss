@@ -1,0 +1,224 @@
+/* Custom overrides for SCC Analysis site */
+
+/* ========================================
+   SIDEBAR: narrower, compact
+   ======================================== */
+@media (min-width: 50rem) {
+  .side-bar {
+    width: 14rem !important;
+    min-width: 14rem !important;
+  }
+  .main {
+    margin-left: 14rem !important;
+  }
+}
+
+.site-nav .nav-list {
+  font-size: 0.85rem !important;
+  padding: 0 !important;
+}
+
+.site-nav .nav-list-link {
+  padding: 0.35rem 1rem !important;
+}
+
+.site-header {
+  padding: 0.75rem 1rem !important;
+}
+
+.site-title {
+  font-size: 0.95rem !important;
+}
+
+/* ========================================
+   MAIN CONTENT: use the extra space
+   ======================================== */
+.main-content-wrap {
+  max-width: 100% !important;
+  padding: 2rem 3rem !important;
+}
+
+.main-content {
+  max-width: 72rem !important;
+}
+
+/* ========================================
+   TABLES: programmer-friendly dark tables
+   ======================================== */
+.table-wrapper {
+  overflow-x: auto;
+  margin: 1rem 0;
+}
+
+table {
+  font-size: 0.82rem !important;
+  border-collapse: collapse !important;
+  width: 100%;
+}
+
+table th {
+  font-weight: 600 !important;
+  text-transform: uppercase;
+  font-size: 0.72rem !important;
+  letter-spacing: 0.05em;
+  padding: 0.5rem 0.75rem !important;
+  white-space: nowrap;
+}
+
+table td {
+  padding: 0.4rem 0.75rem !important;
+  font-family: 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', monospace;
+  font-size: 0.8rem;
+}
+
+table tr:hover td {
+  background-color: rgba(255, 255, 255, 0.04) !important;
+}
+
+/* Highlight winning cells */
+table td strong {
+  color: #4ade80 !important;
+}
+
+/* ========================================
+   CODE & PRE: better for programmers
+   ======================================== */
+code {
+  font-size: 0.82em !important;
+  padding: 0.15em 0.35em !important;
+}
+
+pre {
+  font-size: 0.82rem !important;
+  line-height: 1.5;
+  padding: 1rem !important;
+  border-radius: 6px !important;
+}
+
+/* ========================================
+   HEADINGS: cleaner hierarchy
+   ======================================== */
+h1 { font-size: 2rem !important; margin-top: 0 !important; }
+h2 { font-size: 1.5rem !important; margin-top: 2.5rem !important; padding-bottom: 0.3rem; border-bottom: 1px solid rgba(255,255,255,0.1); }
+h3 { font-size: 1.15rem !important; margin-top: 1.8rem !important; }
+h4 { font-size: 1rem !important; }
+
+/* ========================================
+   LISTS: tighter, cleaner
+   ======================================== */
+ul, ol {
+  padding-left: 1.5rem !important;
+}
+
+li {
+  margin: 0.2rem 0 !important;
+  line-height: 1.5;
+}
+
+/* ========================================
+   DARK/LIGHT TOGGLE SWITCH
+   ======================================== */
+.theme-toggle {
+  position: fixed;
+  top: 0.75rem;
+  right: 0.75rem;
+  z-index: 9999;
+  background: rgba(128,128,128,0.2);
+  border: 1px solid rgba(128,128,128,0.3);
+  border-radius: 20px;
+  padding: 0.3rem 0.7rem;
+  cursor: pointer;
+  font-size: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  backdrop-filter: blur(4px);
+  transition: all 0.2s;
+}
+
+.theme-toggle:hover {
+  background: rgba(128,128,128,0.35);
+}
+
+.theme-toggle-icon {
+  font-size: 1rem;
+  line-height: 1;
+}
+
+/* ========================================
+   LIGHT MODE overrides (applied via JS)
+   ======================================== */
+body.light-mode {
+  --body-background-color: #ffffff;
+  --body-text-color: #27262b;
+  --sidebar-color: #f5f6fa;
+  --search-background-color: #ffffff;
+  --code-background-color: #f5f6fa;
+  --border-color: #eeebee;
+  --link-color: #2563eb;
+  --body-heading-color: #27262b;
+  --table-background-color: #ffffff;
+  --feedback-color: rgba(0,0,0,0.04);
+}
+
+body.light-mode .side-bar {
+  background-color: #f5f6fa !important;
+}
+
+body.light-mode .main {
+  background-color: #ffffff !important;
+  color: #27262b !important;
+}
+
+body.light-mode h1, body.light-mode h2, body.light-mode h3,
+body.light-mode h4, body.light-mode h5, body.light-mode h6 {
+  color: #27262b !important;
+}
+
+body.light-mode h2 {
+  border-bottom-color: rgba(0,0,0,0.1);
+}
+
+body.light-mode a {
+  color: #2563eb !important;
+}
+
+body.light-mode code {
+  background-color: #f0f0f0 !important;
+  color: #d63384 !important;
+}
+
+body.light-mode table td strong {
+  color: #16a34a !important;
+}
+
+body.light-mode table tr:hover td {
+  background-color: rgba(0, 0, 0, 0.03) !important;
+}
+
+body.light-mode .theme-toggle {
+  background: rgba(200,200,200,0.4);
+  border-color: rgba(0,0,0,0.15);
+  color: #333;
+}
+
+body.light-mode .site-footer,
+body.light-mode .site-footer a {
+  color: #666 !important;
+}
+
+/* ========================================
+   FOOTER: left-aligned in sidebar
+   ======================================== */
+.site-footer {
+  font-size: 0.7rem !important;
+  line-height: 1.5;
+  padding: 0.75rem 1rem !important;
+  opacity: 0.7;
+}
+
+.site-footer-maintainer {
+  display: block;
+  margin-bottom: 0.25rem;
+  font-weight: 500;
+}

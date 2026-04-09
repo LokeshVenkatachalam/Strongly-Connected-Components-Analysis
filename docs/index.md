@@ -5,77 +5,114 @@ nav_order: 1
 permalink: /
 ---
 
-# Strongly Connected Components Analysis
-{: .fs-9 }
+# SCC Analysis
+{: .fs-9 .fw-700 }
 
-Comprehensive benchmark of parallel SCC algorithms on large-scale graphs (up to 92 billion edges).
-{: .fs-6 .fw-300 }
+Benchmarking parallel Strongly Connected Components algorithms on graphs with up to **92 billion edges**.
+{: .fs-5 .fw-300 }
 
-[View Results]({{ site.baseurl }}/results/){: .btn .btn-primary .fs-5 .mb-4 .mb-md-0 .mr-2 }
-[Documentation]({{ site.baseurl }}/documentation/){: .btn .fs-5 .mb-4 .mb-md-0 }
+[View Results →]({{ site.baseurl }}/results/){: .btn .btn-primary .fs-5 .mb-4 .mb-md-0 .mr-2 }
+[Build & Run →]({{ site.baseurl }}/documentation/){: .btn .btn-outline .fs-5 .mb-4 .mb-md-0 }
 
 ---
 
-## Overview
+## Algorithms
 
-This project benchmarks **4 parallel SCC algorithms** across **36 graphs** at 1, 32, 64, and 128 threads on a 144-core server with 377GB RAM, using the [BGR binary graph format](https://github.com/hpc-heterogeneous-graph-algorithms/graph-format-converters) for high-performance I/O.
+4 parallel SCC implementations benchmarked at 1, 32, 64, and 128 threads on a **144-core / 377GB** machine.
 
-### Algorithms Compared
+| Algorithm | Year | Venue | Approach | Code | Wins |
+|:----------|:-----|:------|:---------|:-----|-----:|
+| **Wang et al.** | 2023 | SIGMOD | VGC + hash reachability | [ucrparlay/Parallel-Strong-Connectivity](https://github.com/ucrparlay/Parallel-Strong-Connectivity) | **23** |
+| **iSpan** | 2018 | SC | Parallel spanning trees | [iHeartGraph/iSpan](https://github.com/iHeartGraph/iSpan) | 8 |
+| **GBBS** | 2018 | SPAA | Randomized greedy BGSS16 | [ParAlg/gbbs](https://github.com/ParAlg/gbbs) | 3 |
+| **par-scc** | 2013 | SC | Trim + FW-BW decomposition | [nrodia/par-scc](https://github.com/nrodia/par-scc) | 2 |
 
-| Algorithm | Year | Venue | Win Count (of 36) |
-|:----------|:-----|:------|-------------------:|
-| **[Wang et al.](https://github.com/ucrparlay/Parallel-Strong-Connectivity)** | 2023 | SIGMOD | **23** |
-| [iSpan](https://github.com/iHeartGraph/iSpan) | 2018 | SC | 8 |
-| [GBBS](https://github.com/ParAlg/gbbs) | 2018 | SPAA | 3 |
-| [par-scc](https://github.com/nrodia/par-scc) | 2013 | SC | 2 |
+Win count = number of graphs (out of 36) where the algorithm achieved the fastest time at its best thread count.
 
-### Headline Results
+---
 
-Wang et al. (2023) is **10–95× faster than par-scc (2013)** on web graphs:
+## Headline: Wang et al. vs par-scc
 
-| Graph | Edges | par-scc (128T) | Wang (128T) | Speedup |
-|:------|------:|---------------:|------------:|--------:|
+The 2023 algorithm crushes the 2013 baseline — especially on web graphs where par-scc struggled:
+
+| Graph | Edges | par-scc | Wang | Speedup |
+|:------|------:|--------:|-----:|--------:|
 | it-2004 | 1.2B | 49.0s | 0.5s | **95×** |
 | webbase-2001 | 1.0B | 86.9s | 1.4s | **64×** |
 | sk-2005 | 1.9B | 24.0s | 0.8s | **31×** |
 | indochina-2004 | 194M | 6.6s | 0.2s | **28×** |
 | uk-2005 | 936M | 12.1s | 0.6s | **20×** |
-
-### Thread Scaling
-
-Wang et al. achieves **20–58× speedup** from 1→128 threads on large graphs:
-- kmer_A2a (361M edges): 67.6s → 1.2s (58×)
-- kmer_V1r (465M edges): 75.4s → 1.3s (56×)
-- GAP-kron (4.2B edges): 14.6s → 0.4s (40×)
+| twitter7 | 1.5B | 0.97s | 0.26s | **3.7×** |
+| GAP-kron | 4.2B | 0.72s | 0.37s | **1.9×** |
 
 ---
 
-## Repository Structure
+## Thread Scaling
+
+Wang et al. achieves **20–58× speedup** from 1 → 128 threads:
 
 ```
-├── algorithms/           # SCC implementations (git subtrees)
-│   ├── wang-etal/        # Wang et al. SIGMOD 2023
-│   ├── gbbs/             # GBBS (ParAlg)
-│   ├── ispan/            # iSpan SC 2018
-│   └── par-scc/          # par-scc SC 2013 (modified for GM_EDGE64)
-├── tools/                # BGR-based benchmark tooling
-├── results/              # Benchmark results and analysis
-└── docs/                 # This documentation site
+kmer_A2a  (361M edges):  67.6s →  1.2s  (58×)
+kmer_V1r  (465M edges):  75.4s →  1.3s  (56×)
+GAP-kron  (4.2B edges):  14.6s →  0.4s  (40×)
+com-Friendster (3.6B):   24.8s →  0.6s  (43×)
+webbase-2001   (1.0B):   49.7s →  1.4s  (37×)
 ```
 
----
-
-## Graph Datasets
-
-36 graphs benchmarked from two collections:
-
-- **`/ssd/Graphs/bgr/`** — 22 original graphs (web crawls, social networks, road networks, synthetic)
-- **`/ssd/Graphs/bgr_directed/`** — 14 directed versions of originally undirected graphs
-
-Graphs range from 1,677 edges (GD96_a) to 4.3 billion edges (GAP-urand), with 5 graphs exceeding 366GB RAM skipped.
+par-scc shows **poor scaling on web graphs** (1–2× at 128T) due to sequential FW-BW bottleneck on millions of small SCCs.
 
 ---
 
-## Maintainer
+## Graphs
 
-[Lokesh Venkatachalam](https://github.com/LokeshVenkatachalam)
+**36 graphs** from two collections, all in [BGR format](https://github.com/hpc-heterogeneous-graph-algorithms/graph-format-converters):
+
+| Category | Examples | Edge range |
+|:---------|:---------|:-----------|
+| Web crawls | sk-2005, uk-2005, webbase-2001 | 194M – 1.9B |
+| Social networks | com-Friendster, twitter7, com-Orkut | 69M – 3.6B |
+| Synthetic | GAP-kron, GAP-urand | 4.2B – 4.3B |
+| Genomics | kmer_V1r, kmer_A2a | 361M – 465M |
+| Road/mesh | road_usa, europe_osm, delaunay_n24 | 34M – 108M |
+| Directed conversions | 14 graphs with random edge orientation | 17M – 5.8B |
+
+5 graphs exceeding 366GB RAM were skipped (eu-2015, uk-2014, clueweb12, gsh-2015, AGATHA_2015).
+
+---
+
+## Quick Start
+
+```bash
+# Build Wang et al. (fastest)
+cd algorithms/wang-etal && git submodule update --init --recursive
+cd src && make scc
+
+# Convert BGR graph → Wang binary format (via /dev/shm)
+cd tools && g++ -O3 -std=c++17 -fopenmp -I<BGR_SRC> bgr2scc.cpp -o bgr2scc
+./bgr2scc /path/to/graph.bgr
+
+# Run SCC with 128 threads
+PARLAY_NUM_THREADS=128 ./algorithms/wang-etal/src/scc \
+  /dev/shm/scc_wang.bin -local_reach -local_scc -t 1 -status
+```
+
+See [Documentation]({{ site.baseurl }}/documentation/) for full build instructions for all 4 algorithms.
+
+---
+
+## Repository
+
+```
+algorithms/
+  wang-etal/     ← SIGMOD 2023 (⭐ recommended)
+  gbbs/          ← SPAA 2018
+  ispan/         ← SC 2018
+  par-scc/       ← SC 2013 (modified: GM_EDGE64)
+tools/
+  bgr2scc.cpp    ← BGR → algorithm format converter
+  scc_analyzer.cpp, run scripts, gen_report.py
+results/
+  Results.md     ← Full 7-section analysis
+  *.csv          ← Raw timing data
+docs/            ← This site
+```
