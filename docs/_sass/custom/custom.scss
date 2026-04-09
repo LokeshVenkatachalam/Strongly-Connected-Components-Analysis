@@ -102,3 +102,7 @@ footer .site-footer, footer .d-md-none, main ~ footer { display: none !important
   padding: 0.75rem 0.75rem !important; opacity: 0.7;
 }
 .site-footer-maintainer { display: block; margin-bottom: 0.15rem; font-weight: 500; }
+
+/* --- FIX: header scrollbar overflow --- */
+.main-header { overflow: hidden !important; }
+.main { overflow-x: hidden !important; }

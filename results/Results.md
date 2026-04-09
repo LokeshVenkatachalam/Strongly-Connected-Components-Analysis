@@ -1,3 +1,10 @@
+---
+layout: default
+title: Results
+nav_order: 3
+permalink: /results/
+---
+
 # SCC Analysis Report
 
 Parallel SCC analysis using [par-scc](https://github.com/nrodia/par-scc) (Method 1: Trim1 + Global FW-BW + Trim1 + FW-BW) with Kosaraju for correctness verification.
@@ -65,137 +72,49 @@ Parallel SCC analysis using [par-scc](https://github.com/nrodia/par-scc) (Method
 
 ### SCC Size Histograms
 
-**MOLIERE_2016** (25,026 SCCs):
+**MOLIERE_2016** (25,026 SCCs): `1-10→25,006 | 11-100→19 | 10M-100M→1`
 
-- 1-10: 25,006
-- 11-100: 19
-- 10M-100M: 1
+**GAP-urand** (1 SCCs): `100M-1B→1`
 
-**GAP-urand** (1 SCCs):
+**GAP-kron** (71,164,263 SCCs): `1-10→71,164,262 | 10M-100M→1`
 
-- 100M-1B: 1
+**com-Friendster** (1 SCCs): `10M-100M→1`
 
-**GAP-kron** (71,164,263 SCCs):
+**sk-2005** (8,815,057 SCCs): `1-10→8,797,233 | 11-100→15,306 | 101-1K→2,028 | 1K-10K→395 | 10K-100K→92 | 100K-1M→2 | 10M-100M→1`
 
-- 1-10: 71,164,262
-- 10M-100M: 1
+**twitter7** (8,044,728 SCCs): `1-10→8,044,495 | 11-100→229 | 101-1K→3 | 10M-100M→1`
 
-**com-Friendster** (1 SCCs):
+**it-2004** (6,753,961 SCCs): `1-10→6,707,227 | 11-100→41,765 | 101-1K→4,380 | 1K-10K→587 | 10K-100K→1 | 10M-100M→1`
 
-- 10M-100M: 1
+**webbase-2001** (41,126,852 SCCs): `1-10→40,775,776 | 11-100→319,505 | 101-1K→29,157 | 1K-10K→2,413 | 10M-100M→1`
 
-**sk-2005** (8,815,057 SCCs):
+**uk-2005** (5,811,041 SCCs): `1-10→5,725,130 | 11-100→70,091 | 101-1K→15,676 | 1K-10K→133 | 10K-100K→9 | 100K-1M→1 | 10M-100M→1`
 
-- 1-10: 8,797,233
-- 11-100: 15,306
-- 101-1K: 2,028
-- 1K-10K: 395
-- 10K-100K: 92
-- 100K-1M: 2
-- 10M-100M: 1
+**nlpkkt240** (1 SCCs): `10M-100M→1`
 
-**twitter7** (8,044,728 SCCs):
+**arabic-2005** (4,000,414 SCCs): `1-10→3,982,699 | 11-100→14,821 | 101-1K→2,309 | 1K-10K→570 | 10K-100K→14 | 10M-100M→1`
 
-- 1-10: 8,044,495
-- 11-100: 229
-- 101-1K: 3
-- 10M-100M: 1
+**kmer_V1r** (9 SCCs): `11-100→5 | 101-1K→3 | 100M-1B→1`
 
-**it-2004** (6,753,961 SCCs):
+**kmer_A2a** (5,353 SCCs): `11-100→4,615 | 101-1K→737 | 100M-1B→1`
 
-- 1-10: 6,707,227
-- 11-100: 41,765
-- 101-1K: 4,380
-- 1K-10K: 587
-- 10K-100K: 1
-- 10M-100M: 1
+**com-Orkut** (1 SCCs): `1M-10M→1`
 
-**webbase-2001** (41,126,852 SCCs):
+**indochina-2004** (1,749,052 SCCs): `1-10→1,734,052 | 11-100→13,146 | 101-1K→1,576 | 1K-10K→274 | 10K-100K→3 | 1M-10M→1`
 
-- 1-10: 40,775,776
-- 11-100: 319,505
-- 101-1K: 29,157
-- 1K-10K: 2,413
-- 10M-100M: 1
+**europe_osm** (1 SCCs): `10M-100M→1`
 
-**uk-2005** (5,811,041 SCCs):
+**delaunay_n24** (1 SCCs): `10M-100M→1`
 
-- 1-10: 5,725,130
-- 11-100: 70,091
-- 101-1K: 15,676
-- 1K-10K: 133
-- 10K-100K: 9
-- 100K-1M: 1
-- 10M-100M: 1
+**com-LiveJournal** (1 SCCs): `1M-10M→1`
 
-**nlpkkt240** (1 SCCs):
+**road_usa** (1 SCCs): `10M-100M→1`
 
-- 10M-100M: 1
+**road_central** (1 SCCs): `10M-100M→1`
 
-**arabic-2005** (4,000,414 SCCs):
+**webbase-1M_connected** (940,398 SCCs): `1-10→939,887 | 11-100→412 | 101-1K→92 | 1K-10K→7`
 
-- 1-10: 3,982,699
-- 11-100: 14,821
-- 101-1K: 2,309
-- 1K-10K: 570
-- 10K-100K: 14
-- 10M-100M: 1
-
-**kmer_V1r** (9 SCCs):
-
-- 11-100: 5
-- 101-1K: 3
-- 100M-1B: 1
-
-**kmer_A2a** (5,353 SCCs):
-
-- 11-100: 4,615
-- 101-1K: 737
-- 100M-1B: 1
-
-**com-Orkut** (1 SCCs):
-
-- 1M-10M: 1
-
-**indochina-2004** (1,749,052 SCCs):
-
-- 1-10: 1,734,052
-- 11-100: 13,146
-- 101-1K: 1,576
-- 1K-10K: 274
-- 10K-100K: 3
-- 1M-10M: 1
-
-**europe_osm** (1 SCCs):
-
-- 10M-100M: 1
-
-**delaunay_n24** (1 SCCs):
-
-- 10M-100M: 1
-
-**com-LiveJournal** (1 SCCs):
-
-- 1M-10M: 1
-
-**road_usa** (1 SCCs):
-
-- 10M-100M: 1
-
-**road_central** (1 SCCs):
-
-- 10M-100M: 1
-
-**webbase-1M_connected** (940,398 SCCs):
-
-- 1-10: 939,887
-- 11-100: 412
-- 101-1K: 92
-- 1K-10K: 7
-
-**GD96_a** (1,096 SCCs):
-
-- 1-10: 1,096
+**GD96_a** (1,096 SCCs): `1-10→1,096`
 
 ## 2. Directed Graphs (`/ssd/Graphs/bgr_directed`)
 
@@ -241,87 +160,33 @@ These are the undirected graphs from bgr/ converted to directed by randomly assi
 
 ### SCC Size Histograms
 
-**AGATHA_2015** (21,543,534 SCCs):
+**AGATHA_2015** (21,543,534 SCCs): `1-10→21,543,533 | 100M-1B→1`
 
-- 1-10: 21,543,533
-- 100M-1B: 1
+**MOLIERE_2016** (1,711,655 SCCs): `1-10→1,711,564 | 11-100→90 | 10M-100M→1`
 
-**MOLIERE_2016** (1,711,655 SCCs):
+**GAP-urand** (30 SCCs): `1-10→29 | 100M-1B→1`
 
-- 1-10: 1,711,564
-- 11-100: 90
-- 10M-100M: 1
+**GAP-kron** (93,498,642 SCCs): `1-10→93,498,641 | 10M-100M→1`
 
-**GAP-urand** (30 SCCs):
+**com-Friendster** (18,653,098 SCCs): `1-10→18,653,056 | 11-100→41 | 10M-100M→1`
 
-- 1-10: 29
-- 100M-1B: 1
+**nlpkkt240** (1,460 SCCs): `1-10→1,459 | 10M-100M→1`
 
-**GAP-kron** (93,498,642 SCCs):
+**kmer_V1r** (213,166,902 SCCs): `1-10→213,162,906 | 11-100→3,969 | 101-1K→26 | 100K-1M→1`
 
-- 1-10: 93,498,641
-- 10M-100M: 1
+**kmer_A2a** (170,196,274 SCCs): `1-10→170,195,225 | 11-100→1,014 | 101-1K→34 | 100K-1M→1`
 
-**com-Friendster** (18,653,098 SCCs):
+**com-Orkut** (108,992 SCCs): `1-10→108,991 | 1M-10M→1`
 
-- 1-10: 18,653,056
-- 11-100: 41
-- 10M-100M: 1
+**europe_osm** (50,554,255 SCCs): `1-10→50,550,563 | 11-100→3,687 | 101-1K→5`
 
-**nlpkkt240** (1,460 SCCs):
+**delaunay_n24** (953,904 SCCs): `1-10→953,811 | 11-100→92 | 10M-100M→1`
 
-- 1-10: 1,459
-- 10M-100M: 1
+**com-LiveJournal** (1,202,554 SCCs): `1-10→1,202,200 | 11-100→350 | 101-1K→3 | 1M-10M→1`
 
-**kmer_V1r** (213,166,902 SCCs):
+**road_usa** (22,610,811 SCCs): `1-10→22,589,237 | 11-100→21,473 | 101-1K→101`
 
-- 1-10: 213,162,906
-- 11-100: 3,969
-- 101-1K: 26
-- 100K-1M: 1
-
-**kmer_A2a** (170,196,274 SCCs):
-
-- 1-10: 170,195,225
-- 11-100: 1,014
-- 101-1K: 34
-- 100K-1M: 1
-
-**com-Orkut** (108,992 SCCs):
-
-- 1-10: 108,991
-- 1M-10M: 1
-
-**europe_osm** (50,554,255 SCCs):
-
-- 1-10: 50,550,563
-- 11-100: 3,687
-- 101-1K: 5
-
-**delaunay_n24** (953,904 SCCs):
-
-- 1-10: 953,811
-- 11-100: 92
-- 10M-100M: 1
-
-**com-LiveJournal** (1,202,554 SCCs):
-
-- 1-10: 1,202,200
-- 11-100: 350
-- 101-1K: 3
-- 1M-10M: 1
-
-**road_usa** (22,610,811 SCCs):
-
-- 1-10: 22,589,237
-- 11-100: 21,473
-- 101-1K: 101
-
-**road_central** (13,312,344 SCCs):
-
-- 1-10: 13,299,482
-- 11-100: 12,809
-- 101-1K: 53
+**road_central** (13,312,344 SCCs): `1-10→13,299,482 | 11-100→12,809 | 101-1K→53`
 
 ## 3. Skipped Graphs
 
@@ -413,72 +278,17 @@ Converting undirected graphs to directed by random edge orientation dramatically
 
 ## 5. Modern SCC Algorithms: Alternatives to par-scc
 
-Par-scc (Hong et al., SC 2013) was state-of-the-art a decade ago but has significant limitations on modern hardware and complex graph topologies (as seen in our web graph results). Below are modern alternatives worth considering, prioritized by code availability and citation impact.
+par-scc (2013) is outdated. These modern alternatives offer 10–95× better performance:
 
-### Recommended: Top 3 Options
+| Algorithm | Year | Venue | Key Innovation | Code | Best For |
+|:----------|:-----|:------|:---------------|:-----|:---------|
+| **Wang et al.** | 2023 | SIGMOD | VGC breaks BFS sync barriers; hash-based reachability | [GitHub](https://github.com/ucrparlay/Parallel-Strong-Connectivity) | Web graphs, complex SCCs |
+| **GBBS** | 2018 | SPAA | Work-efficient randomized greedy BGSS16; 400+ citations | [GitHub](https://github.com/ParAlg/gbbs) | General purpose baseline |
+| **iSpan** | 2018 | SC | Parallel spanning trees with relaxed sync; OpenMP/MPI | [GitHub](https://github.com/iHeartGraph/iSpan) | Distributed / OpenMP |
+| **ECL-SCC** | 2023 | — | GPU-accelerated SCC | [GitHub](https://github.com/burtscher/ECL-SCC) | GPU workloads |
 
-#### 1. Parallel Strong Connectivity (Wang, Dong, Gu, Sun — SIGMOD 2023) ⭐ Best Choice
+**Recommendation:** Wang et al. for this workload (144-core CPU, large web+social graphs). See [Section 7](#7-modern-scc-algorithm-benchmark-results) for full benchmark results.
 
-- **Paper:** "Parallel Strong Connectivity Based on Faster Reachability" (SIGMOD 2023)
-- **Key innovation:** Vertical Granularity Control (VGC) breaks synchronization barriers in parallel reachability, enabling much finer-grained parallelism. Uses a novel hash-based reachability technique that avoids BFS level-synchronization overhead.
-- **Performance:** **6× faster than GBBS** and **12.8× faster than sequential Tarjan** on average. Specifically excels on web graphs where par-scc struggles.
-- **Code:** https://github.com/ucrparlay/Parallel-Strong-Connectivity
-- **Reproducibility:** SIGMOD reproducibility badge; independently verified.
-- **Citation count:** Actively cited since 2023 in parallel graph algorithm literature.
-- **Why it matters for us:** Directly addresses the web graph bottleneck we observed. The VGC approach handles the "millions of small SCCs" problem that causes par-scc to lose parallelism on sk-2005, it-2004, and webbase-2001.
-- **Links:** [Paper](https://arxiv.org/abs/2303.04934) · [Code](https://github.com/ucrparlay/Parallel-Strong-Connectivity) · [ACM DL](https://dl.acm.org/doi/10.1145/3589259)
-
-#### 2. GBBS — Graph Based Benchmark Suite (Dhulipala, Blelloch, Shun — SPAA 2018, J.ACM 2021)
-
-- **Paper:** "Theoretically Efficient Parallel Graph Algorithms Can Be Fast and Scalable"
-- **Key innovation:** Provably work-efficient parallel algorithms for 20+ graph problems including SCC. Uses a randomized greedy approach (BGSS16 algorithm) for SCC.
-- **Performance:** Strong baseline; the SIGMOD 2023 paper above is 6× faster, but GBBS is well-tested and battle-hardened across many graph types.
-- **Code:** https://github.com/ParAlg/gbbs (SCC at `benchmarks/StronglyConnectedComponents/`)
-- **Format:** Uses its own compressed sparse format but includes converters.
-- **Citation count:** 400+ citations; widely used as the standard benchmark baseline.
-- **Why it matters for us:** Industry-standard reference implementation. Good for validating results and as a fallback. Well-maintained codebase.
-- **Links:** [Code](https://github.com/ParAlg/gbbs) · [Docs](https://paralg.github.io/gbbs/)
-
-#### 3. iSpan (Ji, Liu, Huang — SC 2018)
-
-- **Paper:** "iSpan: Parallel Identification of Strongly Connected Components with Spanning Trees"
-- **Key innovation:** Parallel spanning tree construction with relaxed synchronization. Supports both shared-memory (OpenMP) and distributed-memory (MPI).
-- **Performance:** 18× faster than DFS-based methods, 4× faster than BFS-based methods. Good scaling to high thread counts.
-- **Code:** https://github.com/iHeartGraph/iSpan
-- **Citation count:** Well-cited in parallel SCC literature since 2018.
-- **Why it matters for us:** Directly comparable to par-scc's approach but with better parallelism. OpenMP-based, so integration with our BGR reader would be straightforward.
-- **Links:** [Code](https://github.com/iHeartGraph/iSpan) · [Paper](https://www2.seas.gwu.edu/~howie/publications/iSpan-SC18.pdf)
-
-### Other Notable Work
-
-#### 4. Multi-step SCC (Slota et al., IPDPS 2014, updated)
-
-- Sequential Tarjan + parallel coloring hybrid. Older but well-understood.
-- Referenced as baseline in most modern papers.
-
-#### 5. ECL-SCC (Burtscher et al., 2023) — GPU
-
-- **Code:** https://github.com/burtscher/ECL-SCC
-- GPU-focused (CUDA) but algorithmic ideas are transferable to CPU.
-- Relevant if GPU acceleration is considered in the future.
-
-### Comparison Summary
-
-| Algorithm | Year | Venue | Speedup vs Tarjan | Code | Best For |
-|-----------|------|-------|-------------------:|------|----------|
-| **Wang et al. (VGC)** | 2023 | SIGMOD | ~12.8× | [GitHub](https://github.com/ucrparlay/Parallel-Strong-Connectivity) | Web graphs, complex SCC structure |
-| **GBBS** | 2018/2021 | SPAA/JACM | ~5-8× | [GitHub](https://github.com/ParAlg/gbbs) | General purpose, well-tested |
-| **iSpan** | 2018 | SC | ~4-18× | [GitHub](https://github.com/iHeartGraph/iSpan) | Large-scale, OpenMP/MPI |
-| par-scc (current) | 2013 | SC | ~5-29× | [GitHub](https://github.com/nrodia/par-scc) | Small-world graphs only |
-| ECL-SCC | 2023 | — | GPU | [GitHub](https://github.com/burtscher/ECL-SCC) | GPU acceleration |
-
-### Recommendation
-
-For our workload (large web graphs + social/synthetic graphs on 144-core CPU):
-
-1. **Start with Wang et al. (SIGMOD 2023)** — it's the fastest known CPU implementation, specifically designed to handle the web graph bottleneck we observed, and has reproducible code.
-2. **Use GBBS as validation baseline** — it's the community standard and supports many graph formats.
-3. **Consider iSpan** if distributed memory (multi-node) is needed in the future.
 
 ## 6. Methodology
 
