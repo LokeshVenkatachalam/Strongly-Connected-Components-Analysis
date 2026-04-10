@@ -1,21 +1,26 @@
-<!-- Tablesort: lightweight sortable tables -->
+<!-- Force browser to check for updates -->
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+
+<!-- Tablesort: sortable tables via CDN -->
 <script src="https://cdn.jsdelivr.net/npm/tablesort@5.3.0/dist/tablesort.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/tablesort@5.3.0/dist/sorts/tablesort.number.min.js"></script>
 
 <style>
-/* Tablesort styling */
+/* Tablesort indicators */
 table th[role=columnheader] { cursor: pointer; user-select: none; }
 table th[aria-sort=ascending]::after { content: " ▲"; font-size: 0.7em; opacity: 0.6; }
 table th[aria-sort=descending]::after { content: " ▼"; font-size: 0.7em; opacity: 0.6; }
 table th[role=columnheader]:not([aria-sort])::after { content: " ⇅"; font-size: 0.7em; opacity: 0.25; }
 
-/* Histogram table: compact colored bars */
+/* Histogram colored bars */
 .hist-table { border-collapse: collapse; font-size: 0.72rem; margin: 0.3rem 0; }
 .hist-table td { padding: 1px 6px; text-align: center; border: none; }
 .hist-table .hist-bar-cell { height: 18px; border-radius: 2px; }
 .hist-table .hist-label { opacity: 0.5; font-size: 0.62rem; }
 
-/* Color coding for timing cells */
+/* Color coding for timing */
 .cell-fast { color: #4ade80; font-weight: 600; }
 .cell-mid { color: #facc15; }
 .cell-slow { color: #f87171; }
@@ -23,7 +28,7 @@ body.light-mode .cell-fast { color: #16a34a; font-weight: 600; }
 body.light-mode .cell-mid { color: #ca8a04; }
 body.light-mode .cell-slow { color: #dc2626; }
 
-/* Larger code blocks in docs */
+/* Larger commands in docs */
 .main-content pre { font-size: 0.88rem !important; }
 .main-content code { font-size: 0.88em !important; }
 </style>
