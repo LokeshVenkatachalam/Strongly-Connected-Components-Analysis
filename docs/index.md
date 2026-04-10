@@ -65,15 +65,21 @@ par-scc shows **poor scaling on web graphs** (1–2× at 128T) due to sequential
 
 ## LV Favicon Concepts
 
-Here are **5 favicon color options** based on the bold **LV monogram + SCC loop** idea.
-The browser tab currently uses **Option 1** so you can compare it live.
+The browser tab now uses your uploaded **LV-graph2.png**.
+The five SVG color variants remain below for comparison.
 
 <div class="favicon-grid">
   <div class="favicon-card active">
+    <img src="{{ '/assets/favicons/LV-graph2.png' | relative_url }}" alt="Current uploaded LV favicon">
+    <strong>Current — Uploaded LV Graph</strong>
+    <code>LV-graph2.png</code>
+    <p>Active browser-tab favicon</p>
+  </div>
+  <div class="favicon-card">
     <img src="{{ '/assets/favicons/lv-loop-midnight-emerald.svg' | relative_url }}" alt="Option 1 midnight emerald favicon">
     <strong>Option 1 — Midnight Emerald</strong>
     <code>#0B1F4D</code> + <code>#34D399</code>
-    <p>Current favicon</p>
+    <p>SVG concept variation</p>
   </div>
   <div class="favicon-card">
     <img src="{{ '/assets/favicons/lv-loop-cobalt-mint.svg' | relative_url }}" alt="Option 2 cobalt mint favicon">
