@@ -1,3 +1,40 @@
+<style>
+/* === SORT DROPDOWN === */
+.table-sort-bar {
+  display: flex; align-items: center; gap: 0.5rem;
+  margin-bottom: 0.5rem; font-size: 0.78rem;
+}
+.table-sort-bar label { opacity: 0.6; white-space: nowrap; }
+.table-sort-bar select {
+  background: rgba(128,128,128,0.15); color: inherit; border: 1px solid rgba(128,128,128,0.3);
+  border-radius: 4px; padding: 0.2rem 0.4rem; font-size: 0.78rem; cursor: pointer;
+}
+.table-sort-bar button {
+  background: rgba(128,128,128,0.15); color: inherit; border: 1px solid rgba(128,128,128,0.3);
+  border-radius: 4px; padding: 0.2rem 0.5rem; font-size: 0.78rem; cursor: pointer;
+}
+.table-sort-bar button:hover, .table-sort-bar select:hover {
+  background: rgba(128,128,128,0.3);
+}
+
+/* === HISTOGRAM BARS === */
+.scc-hist { display: flex; gap: 2px; align-items: flex-end; height: 1.4rem; margin: 0.15rem 0; }
+.scc-hist-bar {
+  display: inline-block; min-width: 3px; border-radius: 2px 2px 0 0;
+  background: #6366f1; position: relative; cursor: default;
+}
+.scc-hist-bar:hover { background: #818cf8; }
+.scc-hist-bar:hover::after {
+  content: attr(data-tip); position: absolute; bottom: 110%; left: 50%;
+  transform: translateX(-50%); background: #1e1e2e; color: #cdd6f4;
+  border: 1px solid #45475a; border-radius: 4px; padding: 2px 6px;
+  font-size: 0.65rem; white-space: nowrap; z-index: 100; pointer-events: none;
+}
+body.light-mode .scc-hist-bar { background: #4f46e5; }
+body.light-mode .scc-hist-bar:hover { background: #6366f1; }
+body.light-mode .scc-hist-bar:hover::after { background: #fff; color: #333; border-color: #ccc; }
+</style>
+
 <script>
 document.addEventListener('DOMContentLoaded', function() {
 
@@ -5,72 +42,137 @@ document.addEventListener('DOMContentLoaded', function() {
   var toggle = document.createElement('button');
   toggle.className = 'theme-toggle';
   toggle.setAttribute('aria-label', 'Toggle light/dark mode');
-  function setToggleLabel(light) {
+  function setLabel(light) {
     toggle.innerHTML = light
       ? '<span class="theme-toggle-icon">🌙</span><span>Dark</span>'
       : '<span class="theme-toggle-icon">☀️</span><span>Light</span>';
   }
   var isLight = localStorage.getItem('theme') === 'light';
   if (isLight) document.body.classList.add('light-mode');
-  setToggleLabel(isLight);
+  setLabel(isLight);
   document.body.appendChild(toggle);
   toggle.addEventListener('click', function() {
     document.body.classList.toggle('light-mode');
-    var nowLight = document.body.classList.contains('light-mode');
-    localStorage.setItem('theme', nowLight ? 'light' : 'dark');
-    setToggleLabel(nowLight);
+    var nl = document.body.classList.contains('light-mode');
+    localStorage.setItem('theme', nl ? 'light' : 'dark');
+    setLabel(nl);
   });
 
   // === FOOTER: inject "Maintained by" into sidebar ===
-  var sidebarFooter = document.querySelector('header.side-bar .d-md-block.site-footer')
-    || document.querySelector('.side-bar .site-footer');
-  if (sidebarFooter && !sidebarFooter.querySelector('.site-footer-maintainer')) {
+  var sf = document.querySelector('header.side-bar .d-md-block.site-footer')
+        || document.querySelector('.side-bar .site-footer');
+  if (sf && !sf.querySelector('.site-footer-maintainer')) {
     var m = document.createElement('div');
     m.className = 'site-footer-maintainer';
     m.innerHTML = 'Maintained by <a href="https://github.com/LokeshVenkatachalam">Lokesh Venkatachalam</a>';
-    sidebarFooter.insertBefore(m, sidebarFooter.firstChild);
-    sidebarFooter.style.cssText = 'display:block!important;';
+    sf.insertBefore(m, sf.firstChild);
+    sf.style.cssText = 'display:block!important';
   }
 
-  // === SORTABLE TABLES ===
-  document.querySelectorAll('table').forEach(function(table) {
+  // === SORTABLE TABLES: dropdown above each table ===
+  document.querySelectorAll('.table-wrapper table, main table').forEach(function(table) {
     var headers = table.querySelectorAll('th');
-    if (headers.length < 2) return;
-    headers.forEach(function(th, colIdx) {
-      th.classList.add('sortable');
-      th.addEventListener('click', function() {
-        var tbody = table.querySelector('tbody') || table;
-        var rows = Array.from(tbody.querySelectorAll('tr'));
-        if (rows.length < 2) return;
+    if (headers.length < 3) return;
 
-        // Determine sort direction
-        var asc = !th.classList.contains('sort-asc');
-        headers.forEach(function(h) { h.classList.remove('sort-asc','sort-desc'); });
-        th.classList.add(asc ? 'sort-asc' : 'sort-desc');
+    var wrapper = table.closest('.table-wrapper') || table.parentNode;
+    var bar = document.createElement('div');
+    bar.className = 'table-sort-bar';
 
-        rows.sort(function(a, b) {
-          var ca = a.children[colIdx], cb = b.children[colIdx];
-          if (!ca || !cb) return 0;
-          var va = ca.textContent.trim(), vb = cb.textContent.trim();
-          // Try numeric (strip commas, ×, s, ms, %, B, M, K, —)
-          var na = parseFloat(va.replace(/[,×xsmBMKGT%—\s]/g, ''));
-          var nb = parseFloat(vb.replace(/[,×xsmBMKGT%—\s]/g, ''));
-          // Handle multipliers
-          if (/[\d.]+B$/i.test(va)) na = parseFloat(va) * 1e9;
-          else if (/[\d.]+M$/i.test(va)) na = parseFloat(va) * 1e6;
-          else if (/[\d.]+K$/i.test(va)) na = parseFloat(va) * 1e3;
-          if (/[\d.]+B$/i.test(vb)) nb = parseFloat(vb) * 1e9;
-          else if (/[\d.]+M$/i.test(vb)) nb = parseFloat(vb) * 1e6;
-          else if (/[\d.]+K$/i.test(vb)) nb = parseFloat(vb) * 1e3;
-          // — or SKIP or FAIL sorts last
-          if (va === '—' || va === 'SKIP' || va === 'FAIL') na = Infinity;
-          if (vb === '—' || vb === 'SKIP' || vb === 'FAIL') nb = Infinity;
-          if (!isNaN(na) && !isNaN(nb)) return asc ? na - nb : nb - na;
-          return asc ? va.localeCompare(vb) : vb.localeCompare(va);
-        });
-        rows.forEach(function(r) { tbody.appendChild(r); });
-      });
+    var label = document.createElement('label');
+    label.textContent = 'Sort by:';
+    bar.appendChild(label);
+
+    var select = document.createElement('select');
+    var defOpt = document.createElement('option');
+    defOpt.textContent = '— original order —';
+    defOpt.value = '-1';
+    select.appendChild(defOpt);
+    headers.forEach(function(th, i) {
+      var opt = document.createElement('option');
+      opt.textContent = th.textContent.trim();
+      opt.value = i;
+      select.appendChild(opt);
     });
+    bar.appendChild(select);
+
+    var dirBtn = document.createElement('button');
+    dirBtn.textContent = '↓ Desc';
+    dirBtn.dataset.asc = '0';
+    bar.appendChild(dirBtn);
+
+    dirBtn.addEventListener('click', function() {
+      var asc = dirBtn.dataset.asc === '1';
+      dirBtn.dataset.asc = asc ? '0' : '1';
+      dirBtn.textContent = asc ? '↓ Desc' : '↑ Asc';
+      doSort();
+    });
+
+    // Store original order
+    var tbody = table.querySelector('tbody') || table;
+    var origRows = Array.from(tbody.querySelectorAll('tr')).map(function(r,i) { return {el:r, idx:i}; });
+
+    function parseVal(text) {
+      var t = text.trim();
+      if (t === '—' || t === 'SKIP' || t === 'FAIL' || t === '') return Infinity;
+      // Handle B/M/K suffixes
+      var m;
+      if ((m = t.match(/^([\d.]+)\s*B/i))) return parseFloat(m[1]) * 1e9;
+      if ((m = t.match(/^([\d.]+)\s*M/i))) return parseFloat(m[1]) * 1e6;
+      if ((m = t.match(/^([\d.]+)\s*K/i))) return parseFloat(m[1]) * 1e3;
+      // Strip formatting
+      var n = parseFloat(t.replace(/[,×xsmT%]/g, ''));
+      return isNaN(n) ? t : n;
+    }
+
+    function doSort() {
+      var col = parseInt(select.value);
+      var asc = dirBtn.dataset.asc === '1';
+      if (col < 0) {
+        origRows.sort(function(a,b) { return a.idx - b.idx; });
+      } else {
+        origRows.sort(function(a,b) {
+          var va = a.el.children[col] ? parseVal(a.el.children[col].textContent) : '';
+          var vb = b.el.children[col] ? parseVal(b.el.children[col].textContent) : '';
+          if (typeof va === 'number' && typeof vb === 'number') return asc ? va - vb : vb - va;
+          return asc ? String(va).localeCompare(String(vb)) : String(vb).localeCompare(String(va));
+        });
+      }
+      origRows.forEach(function(r) { tbody.appendChild(r.el); });
+    }
+
+    select.addEventListener('change', doSort);
+    wrapper.insertBefore(bar, wrapper.firstChild);
+  });
+
+  // === HISTOGRAMS: convert inline code to mini bar charts ===
+  document.querySelectorAll('code').forEach(function(code) {
+    var text = code.textContent;
+    if (!/→/.test(text) || !/\|/.test(text)) return;
+    // Parse: "1-10→25,006 | 11-100→19 | 10M-100M→1"
+    var parts = text.split('|').map(function(s) { return s.trim(); });
+    var buckets = [];
+    parts.forEach(function(p) {
+      var m = p.match(/^(.+?)→([\d,]+)$/);
+      if (m) buckets.push({ label: m[1].trim(), count: parseInt(m[2].replace(/,/g, '')) });
+    });
+    if (buckets.length === 0) return;
+    var maxCount = Math.max.apply(null, buckets.map(function(b) { return b.count; }));
+
+    var container = document.createElement('span');
+    container.className = 'scc-hist';
+    buckets.forEach(function(b) {
+      var bar = document.createElement('span');
+      bar.className = 'scc-hist-bar';
+      var h = Math.max(3, Math.round((Math.log10(b.count + 1) / Math.log10(maxCount + 1)) * 20));
+      bar.style.height = h + 'px';
+      bar.style.width = Math.max(8, Math.min(40, Math.round(60 / buckets.length))) + 'px';
+      bar.dataset.tip = b.label + ': ' + b.count.toLocaleString();
+      container.appendChild(bar);
+    });
+
+    // Replace the <code> element, keep the bold prefix
+    var parent = code.parentNode;
+    parent.replaceChild(container, code);
   });
 
 });
