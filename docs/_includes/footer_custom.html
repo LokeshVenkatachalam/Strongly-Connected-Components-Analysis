@@ -41,7 +41,7 @@
     if (!header || header === '#') return 'text';
     if (/graph|algorithm|year|venue|approach|code|category|examples|file|format|used by|methods|bucket/.test(header)) return 'text';
     if (/speedup|wins|win count|largest scc %|share|ratio|accuracy/.test(header) || /%/.test(header)) return 'high-good';
-    if (/load|thread|par-scc|wang|gbbs|ispan|time|\bms\b|seconds?/.test(header)) return 'low-good';
+    if (/load|thread|par-scc|wang|gbbs|ispan|time|\bms\b|seconds?|^[0-9]+t$|^[0-9]+\s*threads?$/.test(header)) return 'low-good';
     return 'neutral';
   }
 
@@ -51,7 +51,7 @@
       return (cell.textContent || '').toLowerCase().trim();
     }).join(' | ');
 
-    if (/speedup|load|1 thread|32 threads|64 threads|128 threads|timing|thread scaling|\bms\b/.test(headerText)) {
+    if (/speedup|load|1t|32t|64t|128t|1 thread|32 threads|64 threads|128 threads|timing|thread scaling|\bms\b/.test(headerText)) {
       return true;
     }
 
