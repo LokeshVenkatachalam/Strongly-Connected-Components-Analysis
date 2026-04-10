@@ -1,129 +1,325 @@
 <script>
 (function(){
-  // === DARK/LIGHT TOGGLE ===
-  var t = document.createElement('button');
-  t.className = 'theme-toggle';
-  var il = localStorage.getItem('theme') === 'light';
-  if (il) document.body.classList.add('light-mode');
-  function upd(l) { t.innerHTML = l ? '🌙 Dark' : '☀️ Light'; }
-  upd(il);
-  document.body.appendChild(t);
-  t.onclick = function() {
-    document.body.classList.toggle('light-mode');
-    var n = document.body.classList.contains('light-mode');
-    localStorage.setItem('theme', n ? 'light' : 'dark');
-    upd(n);
-  };
+  var histogramColors = ['#22c55e', '#06b6d4', '#6366f1', '#8b5cf6', '#ec4899', '#f97316', '#eab308'];
 
-  // === FOOTER: Maintained by ===
-  var allFooters = document.querySelectorAll('.site-footer');
-  allFooters.forEach(function(f) {
-    // Only inject into sidebar footer (inside header.side-bar)
-    if (!f.closest || !f.closest('header')) return;
-    if (f.querySelector('.site-footer-maintainer')) return;
-    var d = document.createElement('div');
-    d.className = 'site-footer-maintainer';
-    d.innerHTML = 'Maintained by <a href="https://github.com/LokeshVenkatachalam">Lokesh Venkatachalam</a>';
-    f.insertBefore(d, f.firstChild);
-    f.style.setProperty('display', 'block', 'important');
-  });
+  function parseNumericValue(text) {
+    if (!text) return NaN;
+    var cleaned = text.trim().replace(/,/g, '');
+    var match = cleaned.match(/^[-+]?\d+(?:\.\d+)?/);
+    if (!match) return NaN;
 
-  // === TABLESORT: activate on all tables ===
-  if (typeof Tablesort !== 'undefined') {
-    document.querySelectorAll('table').forEach(function(tbl) {
-      if (tbl.querySelectorAll('th').length >= 2) {
-        new Tablesort(tbl);
-      }
+    var value = parseFloat(match[0]);
+    if (/ms\b/i.test(cleaned)) return value;
+    if (/s\b/i.test(cleaned) && !/ms\b/i.test(cleaned)) return value * 1000;
+    if (/gb\b/i.test(cleaned)) return value * 1e9;
+    if (/mb\b/i.test(cleaned) && !/ms\b/i.test(cleaned)) return value * 1e6;
+    if (/kb\b/i.test(cleaned)) return value * 1e3;
+    if (/b\b/i.test(cleaned) && !/gb\b/i.test(cleaned)) return value * 1e9;
+    if (/m\b/i.test(cleaned) && !/ms\b/i.test(cleaned)) return value * 1e6;
+    if (/k\b/i.test(cleaned)) return value * 1e3;
+    return value;
+  }
+
+  function quantile(sortedValues, ratio) {
+    if (!sortedValues.length) return NaN;
+    var index = (sortedValues.length - 1) * ratio;
+    var lower = Math.floor(index);
+    var upper = Math.ceil(index);
+    if (lower === upper) return sortedValues[lower];
+    return sortedValues[lower] + (sortedValues[upper] - sortedValues[lower]) * (index - lower);
+  }
+
+  function applyCellClass(cell, className) {
+    cell.classList.remove('cell-good', 'cell-mid', 'cell-bad', 'cell-info-low', 'cell-info-mid', 'cell-info-high');
+    cell.classList.add(className);
+  }
+
+  function classifyHeader(text) {
+    var header = (text || '').toLowerCase().trim();
+    if (!header || header === '#') return 'text';
+    if (/graph|algorithm|year|venue|approach|code|category|examples|file|format|used by|methods|bucket/.test(header)) return 'text';
+    if (/speedup|wins|win count|largest scc %|share|ratio|accuracy/.test(header) || /%/.test(header)) return 'high-good';
+    if (/load|thread|par-scc|wang|gbbs|ispan|time|\bms\b|seconds?/.test(header)) return 'low-good';
+    return 'neutral';
+  }
+
+  function ensureThemeToggle() {
+    if (document.querySelector('.theme-toggle')) return;
+    var button = document.createElement('button');
+    button.className = 'theme-toggle';
+    var isLight = localStorage.getItem('theme') === 'light';
+
+    if (isLight) {
+      document.body.classList.add('light-mode');
+    }
+
+    function updateLabel(lightMode) {
+      button.textContent = lightMode ? 'Dark mode' : 'Light mode';
+    }
+
+    updateLabel(isLight);
+    document.body.appendChild(button);
+
+    button.onclick = function() {
+      document.body.classList.toggle('light-mode');
+      var nextIsLight = document.body.classList.contains('light-mode');
+      localStorage.setItem('theme', nextIsLight ? 'light' : 'dark');
+      updateLabel(nextIsLight);
+    };
+  }
+
+  function ensureMaintainerFooter() {
+    var footer = document.querySelector('.side-bar .site-footer');
+    if (!footer) return;
+    footer.style.setProperty('display', 'block', 'important');
+
+    if (footer.textContent.indexOf('Lokesh Venkatachalam') !== -1) return;
+
+    var maintainer = document.createElement('div');
+    maintainer.className = 'site-footer-maintainer';
+    maintainer.innerHTML = 'Maintained by <a href="https://github.com/LokeshVenkatachalam">Lokesh Venkatachalam</a>';
+    footer.insertBefore(maintainer, footer.firstChild);
+  }
+
+  function parseHistogramBuckets(text) {
+    var parts = text.indexOf('|') >= 0 ? text.split('|') : [text];
+    var buckets = [];
+
+    parts.forEach(function(part) {
+      var match = part.trim().match(/^(.+?)\u2192([\d,]+)$/);
+      if (!match) return;
+      buckets.push({
+        label: match[1].trim(),
+        count: parseInt(match[2].replace(/,/g, ''), 10)
+      });
+    });
+
+    return buckets;
+  }
+
+  function renderHistogramTables() {
+    document.querySelectorAll('.main-content p').forEach(function(paragraph) {
+      if (paragraph.dataset.histogramReady === 'true') return;
+
+      var code = paragraph.querySelector('code');
+      if (!code) return;
+
+      var rawText = code.textContent || '';
+      if (rawText.indexOf('\u2192') === -1) return;
+
+      var buckets = parseHistogramBuckets(rawText);
+      if (!buckets.length || !paragraph.parentNode) return;
+
+      var titleText = paragraph.textContent.replace(rawText, '').trim().replace(/:\s*$/, '');
+      var total = buckets.reduce(function(sum, bucket) {
+        return sum + bucket.count;
+      }, 0);
+
+      var card = document.createElement('div');
+      card.className = 'histogram-card';
+
+      var title = document.createElement('div');
+      title.className = 'histogram-title';
+      title.textContent = titleText;
+      card.appendChild(title);
+
+      var table = document.createElement('table');
+      table.className = 'hist-table';
+      table.innerHTML = '<thead><tr><th>Bucket</th><th>Count</th><th>Share</th></tr></thead><tbody></tbody>';
+
+      var tbody = table.querySelector('tbody');
+      buckets.forEach(function(bucket, index) {
+        var row = document.createElement('tr');
+
+        var labelCell = document.createElement('td');
+        var swatch = document.createElement('span');
+        swatch.className = 'hist-swatch';
+        swatch.style.backgroundColor = histogramColors[index % histogramColors.length];
+        labelCell.appendChild(swatch);
+        labelCell.appendChild(document.createTextNode(bucket.label));
+
+        var countCell = document.createElement('td');
+        countCell.textContent = bucket.count.toLocaleString();
+
+        var shareCell = document.createElement('td');
+        shareCell.textContent = total ? ((bucket.count / total) * 100).toFixed(2) + '%' : '0.00%';
+
+        row.appendChild(labelCell);
+        row.appendChild(countCell);
+        row.appendChild(shareCell);
+        tbody.appendChild(row);
+      });
+
+      card.appendChild(table);
+      paragraph.dataset.histogramReady = 'true';
+      paragraph.parentNode.replaceChild(card, paragraph);
     });
   }
 
-  // === HISTOGRAMS: code → colored table ===
-  var colors = ['#6366f1','#818cf8','#a78bfa','#c084fc','#e879f9','#f472b6','#fb7185','#f87171','#fb923c','#fbbf24','#a3e635'];
-  document.querySelectorAll('code').forEach(function(code) {
-    var txt = code.textContent;
-    if (txt.indexOf('\u2192') < 0) return;
-    var parts = txt.indexOf('|') >= 0 ? txt.split('|') : [txt];
-    var buckets = [];
-    parts.forEach(function(p) {
-      var m = p.trim().match(/^(.+?)\u2192([\d,]+)$/);
-      if (m) buckets.push({ label: m[1].trim(), count: parseInt(m[2].replace(/,/g, '')) });
+  function getHeaderRow(table) {
+    if (table.tHead && table.tHead.rows.length) return table.tHead.rows[0];
+    return table.rows.length ? table.rows[0] : null;
+  }
+
+  function getBodyRows(table) {
+    if (table.tBodies && table.tBodies.length) {
+      return Array.prototype.slice.call(table.tBodies[0].rows);
+    }
+    return Array.prototype.slice.call(table.rows, 1);
+  }
+
+  function getCellText(row, index) {
+    var cell = row.cells[index];
+    return cell ? cell.textContent.trim() : '';
+  }
+
+  function isNumericColumn(rows, index) {
+    var total = 0;
+    var numeric = 0;
+
+    rows.forEach(function(row) {
+      var text = getCellText(row, index);
+      if (!text) return;
+      total += 1;
+      if (!isNaN(parseNumericValue(text))) numeric += 1;
     });
-    if (buckets.length === 0) return;
-    var mx = Math.max.apply(null, buckets.map(function(b) { return b.count; }));
 
-    var tbl = document.createElement('table');
-    tbl.className = 'hist-table';
-    // Bar row
-    var tr1 = document.createElement('tr');
-    // Value row
-    var tr2 = document.createElement('tr');
-    // Label row
-    var tr3 = document.createElement('tr');
-    buckets.forEach(function(b, i) {
-      var h = Math.max(3, Math.round((Math.log10(b.count + 1) / Math.log10(mx + 1)) * 22));
-      var td1 = document.createElement('td');
-      var bar = document.createElement('div');
-      bar.className = 'hist-bar-cell';
-      bar.style.height = h + 'px';
-      bar.style.background = colors[i % colors.length];
-      td1.appendChild(bar);
-      tr1.appendChild(td1);
+    return total > 0 && numeric >= Math.max(2, Math.ceil(total / 2));
+  }
 
-      var td2 = document.createElement('td');
-      td2.style.fontSize = '0.65rem';
-      td2.style.fontWeight = '600';
-      td2.textContent = b.count >= 1e6 ? (b.count/1e6).toFixed(1)+'M' : b.count >= 1e3 ? (b.count/1e3).toFixed(0)+'K' : b.count;
-      tr2.appendChild(td2);
+  function sortTableByColumn(table, index) {
+    var headerRow = getHeaderRow(table);
+    if (!headerRow) return;
 
-      var td3 = document.createElement('td');
-      td3.className = 'hist-label';
-      td3.textContent = b.label;
-      tr3.appendChild(td3);
+    var headers = Array.prototype.slice.call(headerRow.cells);
+    var activeHeader = headers[index];
+    var direction = activeHeader.getAttribute('aria-sort') === 'ascending' ? 'descending' : 'ascending';
+    var rows = getBodyRows(table);
+    if (rows.length < 2) return;
+
+    var numeric = isNumericColumn(rows, index);
+    headers.forEach(function(header) {
+      header.removeAttribute('aria-sort');
     });
-    tbl.appendChild(tr2);
-    tbl.appendChild(tr1);
-    tbl.appendChild(tr3);
-    code.parentNode.replaceChild(tbl, code);
-  });
+    activeHeader.setAttribute('aria-sort', direction);
 
-  // === COLOR CODING: timing cells ===
-  document.querySelectorAll('table').forEach(function(tbl) {
-    var ths = Array.from(tbl.querySelectorAll('th'));
-    // Find columns that look like timing (contain "ms", "Thread", "Time", "Speedup")
-    var timingCols = [];
-    ths.forEach(function(th, i) {
-      var t = th.textContent.toLowerCase();
-      if (/thread|time|ms|speedup|1t|32t|64t|128t|par-scc|wang|gbbs|ispan|best/.test(t)) {
-        timingCols.push(i);
+    rows.sort(function(rowA, rowB) {
+      var textA = getCellText(rowA, index);
+      var textB = getCellText(rowB, index);
+
+      if (numeric) {
+        var valueA = parseNumericValue(textA);
+        var valueB = parseNumericValue(textB);
+        if (isNaN(valueA) && isNaN(valueB)) return 0;
+        if (isNaN(valueA)) return 1;
+        if (isNaN(valueB)) return -1;
+        return direction === 'ascending' ? valueA - valueB : valueB - valueA;
       }
+
+      var comparison = textA.localeCompare(textB, undefined, { numeric: true, sensitivity: 'base' });
+      return direction === 'ascending' ? comparison : -comparison;
     });
-    if (timingCols.length === 0) return;
 
-    var rows = tbl.querySelectorAll('tbody tr, tr');
-    timingCols.forEach(function(col) {
-      var vals = [];
-      rows.forEach(function(r) {
-        var cell = r.children[col];
-        if (!cell || !cell.textContent.trim()) return;
-        var v = parseFloat(cell.textContent.replace(/[,×xsmBMKGT%]/g, ''));
-        if (!isNaN(v) && v < Infinity) vals.push(v);
+    var body = table.tBodies && table.tBodies.length ? table.tBodies[0] : table;
+    rows.forEach(function(row) {
+      body.appendChild(row);
+    });
+  }
+
+  function makeTablesSortable() {
+    document.querySelectorAll('.main-content table').forEach(function(table) {
+      if (table.dataset.sortReady === 'true') return;
+
+      var headerRow = getHeaderRow(table);
+      if (!headerRow || headerRow.cells.length < 2) return;
+
+      table.classList.add('sortable-table');
+      Array.prototype.forEach.call(headerRow.cells, function(headerCell, index) {
+        headerCell.setAttribute('title', 'Click to sort');
+        headerCell.setAttribute('tabindex', '0');
+        headerCell.setAttribute('role', 'button');
+
+        headerCell.addEventListener('click', function() {
+          sortTableByColumn(table, index);
+        });
+
+        headerCell.addEventListener('keydown', function(event) {
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            sortTableByColumn(table, index);
+          }
+        });
       });
-      if (vals.length < 3) return;
-      vals.sort(function(a,b) { return a - b; });
-      var p25 = vals[Math.floor(vals.length * 0.25)];
-      var p75 = vals[Math.floor(vals.length * 0.75)];
 
-      rows.forEach(function(r) {
-        var cell = r.children[col];
-        if (!cell) return;
-        var v = parseFloat(cell.textContent.replace(/[,×xsmBMKGT%]/g, ''));
-        if (isNaN(v)) return;
-        if (v <= p25) cell.classList.add('cell-fast');
-        else if (v >= p75) cell.classList.add('cell-slow');
-        else cell.classList.add('cell-mid');
+      table.dataset.sortReady = 'true';
+    });
+  }
+
+  function applyResultColoring() {
+    document.querySelectorAll('.main-content table').forEach(function(table) {
+      var headerRow = getHeaderRow(table);
+      if (!headerRow) return;
+
+      var rows = getBodyRows(table);
+      if (!rows.length) return;
+
+      Array.prototype.forEach.call(headerRow.cells, function(headerCell, index) {
+        var mode = classifyHeader(headerCell.textContent);
+        if (mode === 'text') return;
+
+        var values = [];
+        var items = [];
+        rows.forEach(function(row) {
+          var cell = row.cells[index];
+          if (!cell) return;
+          var value = parseNumericValue(cell.textContent);
+          if (isNaN(value)) return;
+          values.push(value);
+          items.push({ cell: cell, value: value });
+        });
+
+        if (items.length < 2) return;
+
+        values.sort(function(a, b) { return a - b; });
+        var low = quantile(values, 0.33);
+        var high = quantile(values, 0.66);
+
+        items.forEach(function(item) {
+          if (mode === 'low-good') {
+            if (item.value <= low) applyCellClass(item.cell, 'cell-good');
+            else if (item.value >= high) applyCellClass(item.cell, 'cell-bad');
+            else applyCellClass(item.cell, 'cell-mid');
+            return;
+          }
+
+          if (mode === 'high-good') {
+            if (item.value >= high) applyCellClass(item.cell, 'cell-good');
+            else if (item.value <= low) applyCellClass(item.cell, 'cell-bad');
+            else applyCellClass(item.cell, 'cell-mid');
+            return;
+          }
+
+          if (item.value >= high) applyCellClass(item.cell, 'cell-info-high');
+          else if (item.value <= low) applyCellClass(item.cell, 'cell-info-low');
+          else applyCellClass(item.cell, 'cell-info-mid');
+        });
       });
     });
-  });
+  }
 
+  function initSiteEnhancements() {
+    ensureThemeToggle();
+    ensureMaintainerFooter();
+    renderHistogramTables();
+    makeTablesSortable();
+    applyResultColoring();
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initSiteEnhancements);
+  } else {
+    initSiteEnhancements();
+  }
+  window.addEventListener('load', initSiteEnhancements);
 })();
 </script>

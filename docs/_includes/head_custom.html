@@ -3,32 +3,114 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 
-<!-- Tablesort: sortable tables via CDN -->
-<script src="https://cdn.jsdelivr.net/npm/tablesort@5.3.0/dist/tablesort.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/tablesort@5.3.0/dist/sorts/tablesort.number.min.js"></script>
-
 <style>
-/* Tablesort indicators */
-table th[role=columnheader] { cursor: pointer; user-select: none; }
-table th[aria-sort=ascending]::after { content: " ▲"; font-size: 0.7em; opacity: 0.6; }
-table th[aria-sort=descending]::after { content: " ▼"; font-size: 0.7em; opacity: 0.6; }
-table th[role=columnheader]:not([aria-sort])::after { content: " ⇅"; font-size: 0.7em; opacity: 0.25; }
+/* Sort indicators */
+.sortable-table th {
+  cursor: pointer;
+  user-select: none;
+  position: relative;
+  padding-right: 1.4rem !important;
+}
+.sortable-table th:hover { background: rgba(148, 163, 184, 0.12); }
+.sortable-table th::after {
+  content: " ⇅";
+  font-size: 0.72em;
+  opacity: 0.35;
+  position: absolute;
+  right: 0.45rem;
+}
+.sortable-table th[aria-sort=ascending]::after { content: " ▲"; opacity: 0.8; }
+.sortable-table th[aria-sort=descending]::after { content: " ▼"; opacity: 0.8; }
 
-/* Histogram colored bars */
-.hist-table { border-collapse: collapse; font-size: 0.72rem; margin: 0.3rem 0; }
-.hist-table td { padding: 1px 6px; text-align: center; border: none; }
-.hist-table .hist-bar-cell { height: 18px; border-radius: 2px; }
-.hist-table .hist-label { opacity: 0.5; font-size: 0.62rem; }
+/* Histogram tables */
+.histogram-card {
+  margin: 0.85rem 0 1.25rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 8px;
+  background: rgba(15, 23, 42, 0.24);
+}
+.histogram-title {
+  font-weight: 600;
+  margin-bottom: 0.6rem;
+}
+.hist-table {
+  border-collapse: collapse;
+  width: 100% !important;
+  margin: 0 !important;
+  font-size: 0.8rem;
+}
+.hist-table td,
+.hist-table th {
+  padding: 0.35rem 0.55rem !important;
+}
+.hist-swatch {
+  display: inline-block;
+  width: 0.72rem;
+  height: 0.72rem;
+  border-radius: 999px;
+  margin-right: 0.45rem;
+  vertical-align: middle;
+}
 
-/* Color coding for timing */
-.cell-fast { color: #4ade80; font-weight: 600; }
-.cell-mid { color: #facc15; }
-.cell-slow { color: #f87171; }
-body.light-mode .cell-fast { color: #16a34a; font-weight: 600; }
-body.light-mode .cell-mid { color: #ca8a04; }
-body.light-mode .cell-slow { color: #dc2626; }
+/* Result color coding */
+.cell-good {
+  color: #bbf7d0;
+  background: rgba(34, 197, 94, 0.18);
+  font-weight: 600;
+}
+.cell-mid {
+  color: #fde68a;
+  background: rgba(250, 204, 21, 0.16);
+  font-weight: 600;
+}
+.cell-bad {
+  color: #fecaca;
+  background: rgba(248, 113, 113, 0.18);
+  font-weight: 600;
+}
+.cell-info-low { background: rgba(96, 165, 250, 0.08); }
+.cell-info-mid {
+  color: #bfdbfe;
+  background: rgba(96, 165, 250, 0.14);
+  font-weight: 500;
+}
+.cell-info-high {
+  color: #dbeafe;
+  background: rgba(96, 165, 250, 0.22);
+  font-weight: 600;
+}
+body.light-mode .cell-good {
+  color: #166534;
+  background: rgba(34, 197, 94, 0.18);
+}
+body.light-mode .cell-mid {
+  color: #854d0e;
+  background: rgba(250, 204, 21, 0.2);
+}
+body.light-mode .cell-bad {
+  color: #991b1b;
+  background: rgba(248, 113, 113, 0.18);
+}
+body.light-mode .cell-info-low { background: rgba(59, 130, 246, 0.08); }
+body.light-mode .cell-info-mid {
+  color: #1d4ed8;
+  background: rgba(59, 130, 246, 0.14);
+}
+body.light-mode .cell-info-high {
+  color: #1e3a8a;
+  background: rgba(59, 130, 246, 0.22);
+}
+body.light-mode .histogram-card {
+  background: rgba(248, 250, 252, 0.95);
+  border-color: rgba(148, 163, 184, 0.35);
+}
 
 /* Larger commands in docs */
-.main-content pre { font-size: 0.88rem !important; }
-.main-content code { font-size: 0.88em !important; }
+.main-content pre {
+  font-size: 1rem !important;
+  line-height: 1.6;
+}
+.main-content pre code { font-size: 0.98rem !important; }
+.main-content :not(pre) > code { font-size: 0.92em !important; }
 </style>

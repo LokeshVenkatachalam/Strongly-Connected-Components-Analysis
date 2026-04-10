@@ -14,6 +14,9 @@ Parallel SCC analysis using [par-scc](https://github.com/nrodia/par-scc) (Method
 - **Hardware:** 144 cores, 377GB RAM; graph loaded once with 64 threads
 - **SCC timed at:** 1, 32, 64, 128 threads
 
+{: .note }
+> Tip: click any table header to sort. Green highlights faster/better results, amber marks middle-range values, red highlights slower/weaker values, and blue shading marks structural graph counts.
+
 ## 1. Original Graphs (BGR)
 
 ### SCC Summary

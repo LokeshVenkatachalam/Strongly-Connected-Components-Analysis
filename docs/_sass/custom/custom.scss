@@ -41,23 +41,30 @@
 
 /* --- TABLES --- */
 .table-wrapper { overflow-x: auto; margin: 1rem 0; max-width: 100% !important; }
-table { font-size: 0.82rem !important; border-collapse: collapse !important; width: 100% !important; }
+table { font-size: 0.84rem !important; border-collapse: collapse !important; width: 100% !important; }
 table th {
   font-weight: 600 !important; text-transform: uppercase;
-  font-size: 0.72rem !important; letter-spacing: 0.05em;
+  font-size: 0.74rem !important; letter-spacing: 0.05em;
   padding: 0.5rem 0.75rem !important; white-space: nowrap;
 }
 table td {
   padding: 0.4rem 0.75rem !important;
   font-family: 'SFMono-Regular','Menlo','Monaco','Consolas',monospace;
-  font-size: 0.8rem;
+  font-size: 0.82rem;
 }
 table tr:hover td { background-color: rgba(255,255,255,0.04) !important; }
 table td strong { color: #4ade80 !important; }
 
 /* --- CODE --- */
-code { font-size: 0.82em !important; padding: 0.15em 0.35em !important; }
-pre { font-size: 0.82rem !important; line-height: 1.5; padding: 1rem !important; border-radius: 6px !important; }
+code { font-size: 0.92em !important; padding: 0.15em 0.35em !important; }
+pre {
+  font-size: 1rem !important;
+  line-height: 1.6;
+  padding: 1rem 1.1rem !important;
+  border-radius: 8px !important;
+}
+pre code { font-size: 0.98rem !important; line-height: 1.6; }
+.main-content :not(pre) > code { font-size: 0.92em !important; }
 
 /* --- HEADINGS --- */
 h1 { font-size: 2rem !important; margin-top: 0 !important; }
@@ -95,9 +102,10 @@ footer .site-footer, footer .d-md-none, main ~ footer { display: none !important
 .side-bar .site-footer, .side-bar .d-md-block.site-footer {
   display: block !important;
   font-size: 0.7rem !important; line-height: 1.6;
-  padding: 0.75rem 0.75rem !important; opacity: 0.7;
+  padding: 0.75rem 0.75rem !important; opacity: 0.85;
 }
-.site-footer-maintainer { display: block; margin-bottom: 0.15rem; font-weight: 500; }
+.site-footer-maintainer { display: block; margin-bottom: 0.15rem; font-weight: 600; }
+.site-footer a { font-weight: 600; }
 
 /* --- FIX: header scrollbar overflow --- */
 .main-header { overflow: hidden !important; }
