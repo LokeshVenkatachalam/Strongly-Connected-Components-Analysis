@@ -32,6 +32,10 @@
     cell.classList.add(className);
   }
 
+  function clearCellClasses(cell) {
+    cell.classList.remove('cell-good', 'cell-mid', 'cell-bad', 'cell-info-low', 'cell-info-mid', 'cell-info-high');
+  }
+
   function classifyHeader(text) {
     var header = (text || '').toLowerCase().trim();
     if (!header || header === '#') return 'text';
@@ -208,45 +212,62 @@
       var rows = getBodyRows(table);
       if (!rows.length) return;
 
-      Array.prototype.forEach.call(headerRow.cells, function(headerCell, index) {
-        var mode = classifyHeader(headerCell.textContent);
-        if (mode === 'text') return;
+      var headerModes = Array.prototype.map.call(headerRow.cells, function(headerCell) {
+        return classifyHeader(headerCell.textContent);
+      });
 
-        var values = [];
-        var items = [];
-        rows.forEach(function(row) {
-          var cell = row.cells[index];
-          if (!cell) return;
+      rows.forEach(function(row) {
+        var lowGoodItems = [];
+        var highGoodItems = [];
+        var neutralItems = [];
+
+        Array.prototype.forEach.call(row.cells, function(cell, index) {
+          clearCellClasses(cell);
+
+          var mode = headerModes[index];
+          if (mode === 'text') return;
+
           var value = parseNumericValue(cell.textContent);
           if (isNaN(value)) return;
-          values.push(value);
-          items.push({ cell: cell, value: value });
+
+          var item = { cell: cell, value: value };
+          if (mode === 'low-good') lowGoodItems.push(item);
+          else if (mode === 'high-good') highGoodItems.push(item);
+          else neutralItems.push(item);
         });
 
-        if (items.length < 2) return;
+        [
+          { items: lowGoodItems, mode: 'low-good' },
+          { items: highGoodItems, mode: 'high-good' },
+          { items: neutralItems, mode: 'neutral' }
+        ].forEach(function(group) {
+          if (group.items.length < 2) return;
 
-        values.sort(function(a, b) { return a - b; });
-        var low = quantile(values, 0.33);
-        var high = quantile(values, 0.66);
+          var values = group.items.map(function(item) { return item.value; }).sort(function(a, b) { return a - b; });
+          if (values[0] === values[values.length - 1]) return;
 
-        items.forEach(function(item) {
-          if (mode === 'low-good') {
-            if (item.value <= low) applyCellClass(item.cell, 'cell-good');
-            else if (item.value >= high) applyCellClass(item.cell, 'cell-bad');
-            else applyCellClass(item.cell, 'cell-mid');
-            return;
-          }
+          var low = quantile(values, 0.33);
+          var high = quantile(values, 0.66);
 
-          if (mode === 'high-good') {
-            if (item.value >= high) applyCellClass(item.cell, 'cell-good');
-            else if (item.value <= low) applyCellClass(item.cell, 'cell-bad');
-            else applyCellClass(item.cell, 'cell-mid');
-            return;
-          }
+          group.items.forEach(function(item) {
+            if (group.mode === 'low-good') {
+              if (item.value <= low) applyCellClass(item.cell, 'cell-good');
+              else if (item.value >= high) applyCellClass(item.cell, 'cell-bad');
+              else applyCellClass(item.cell, 'cell-mid');
+              return;
+            }
 
-          if (item.value >= high) applyCellClass(item.cell, 'cell-info-high');
-          else if (item.value <= low) applyCellClass(item.cell, 'cell-info-low');
-          else applyCellClass(item.cell, 'cell-info-mid');
+            if (group.mode === 'high-good') {
+              if (item.value >= high) applyCellClass(item.cell, 'cell-good');
+              else if (item.value <= low) applyCellClass(item.cell, 'cell-bad');
+              else applyCellClass(item.cell, 'cell-mid');
+              return;
+            }
+
+            if (item.value >= high) applyCellClass(item.cell, 'cell-info-high');
+            else if (item.value <= low) applyCellClass(item.cell, 'cell-info-low');
+            else applyCellClass(item.cell, 'cell-info-mid');
+          });
         });
       });
     });
