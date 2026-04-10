@@ -243,6 +243,22 @@
         ].forEach(function(group) {
           if (group.items.length < 2) return;
 
+          if (group.mode === 'low-good' || group.mode === 'high-good') {
+            var sortedItems = group.items.slice().sort(function(a, b) {
+              return group.mode === 'low-good' ? a.value - b.value : b.value - a.value;
+            });
+            var bestValue = sortedItems[0].value;
+            var worstValue = sortedItems[sortedItems.length - 1].value;
+            if (bestValue === worstValue) return;
+
+            group.items.forEach(function(item) {
+              if (item.value === bestValue) applyCellClass(item.cell, 'cell-good');
+              else if (item.value === worstValue) applyCellClass(item.cell, 'cell-bad');
+              else applyCellClass(item.cell, 'cell-mid');
+            });
+            return;
+          }
+
           var values = group.items.map(function(item) { return item.value; }).sort(function(a, b) { return a - b; });
           if (values[0] === values[values.length - 1]) return;
 
@@ -250,20 +266,6 @@
           var high = quantile(values, 0.66);
 
           group.items.forEach(function(item) {
-            if (group.mode === 'low-good') {
-              if (item.value <= low) applyCellClass(item.cell, 'cell-good');
-              else if (item.value >= high) applyCellClass(item.cell, 'cell-bad');
-              else applyCellClass(item.cell, 'cell-mid');
-              return;
-            }
-
-            if (group.mode === 'high-good') {
-              if (item.value >= high) applyCellClass(item.cell, 'cell-good');
-              else if (item.value <= low) applyCellClass(item.cell, 'cell-bad');
-              else applyCellClass(item.cell, 'cell-mid');
-              return;
-            }
-
             if (item.value >= high) applyCellClass(item.cell, 'cell-info-high');
             else if (item.value <= low) applyCellClass(item.cell, 'cell-info-low');
             else applyCellClass(item.cell, 'cell-info-mid');

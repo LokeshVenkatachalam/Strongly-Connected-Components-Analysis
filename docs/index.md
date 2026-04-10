@@ -51,13 +51,13 @@ The 2023 algorithm crushes the 2013 baseline — especially on web graphs where 
 
 Wang et al. achieves **20–58× speedup** from 1 → 128 threads:
 
-```
-kmer_A2a  (361M edges):  67.6s →  1.2s  (58×)
-kmer_V1r  (465M edges):  75.4s →  1.3s  (56×)
-GAP-kron  (4.2B edges):  14.6s →  0.4s  (40×)
-com-Friendster (3.6B):   24.8s →  0.6s  (43×)
-webbase-2001   (1.0B):   49.7s →  1.4s  (37×)
-```
+| Graph | Edges | 1 Thread | 128 Threads | Speedup |
+|:------|------:|---------:|------------:|--------:|
+| kmer_A2a | 361M | 67.6s | 1.2s | 58× |
+| kmer_V1r | 465M | 75.4s | 1.3s | 56× |
+| GAP-kron | 4.2B | 14.6s | 0.4s | 40× |
+| com-Friendster | 3.6B | 24.8s | 0.6s | 43× |
+| webbase-2001 | 1.0B | 49.7s | 1.4s | 37× |
 
 par-scc shows **poor scaling on web graphs** (1–2× at 128T) due to sequential FW-BW bottleneck on millions of small SCCs.
 
