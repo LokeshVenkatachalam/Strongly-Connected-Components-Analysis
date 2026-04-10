@@ -22,88 +22,51 @@
 .sortable-table th[aria-sort=ascending]::after { content: " ▲"; opacity: 0.8; }
 .sortable-table th[aria-sort=descending]::after { content: " ▼"; opacity: 0.8; }
 
-/* Histogram tables */
-.histogram-card {
-  margin: 0.85rem 0 1.25rem;
-  padding: 0.85rem 1rem;
-  border: 1px solid rgba(148, 163, 184, 0.2);
-  border-radius: 8px;
-  background: rgba(15, 23, 42, 0.24);
-}
-.histogram-title {
-  font-weight: 600;
-  margin-bottom: 0.6rem;
-}
-.hist-table {
-  border-collapse: collapse;
-  width: 100% !important;
-  margin: 0 !important;
-  font-size: 0.8rem;
-}
-.hist-table td,
-.hist-table th {
-  padding: 0.35rem 0.55rem !important;
-}
-.hist-swatch {
-  display: inline-block;
-  width: 0.72rem;
-  height: 0.72rem;
-  border-radius: 999px;
-  margin-right: 0.45rem;
-  vertical-align: middle;
-}
-
 /* Result color coding */
+.cell-good,
+.cell-mid,
+.cell-bad,
+.cell-info-low,
+.cell-info-mid,
+.cell-info-high {
+  background: transparent !important;
+}
 .cell-good {
-  color: #bbf7d0;
-  background: rgba(34, 197, 94, 0.18);
+  color: #4ade80;
   font-weight: 600;
 }
 .cell-mid {
-  color: #fde68a;
-  background: rgba(250, 204, 21, 0.16);
+  color: #f59e0b;
   font-weight: 600;
 }
 .cell-bad {
-  color: #fecaca;
-  background: rgba(248, 113, 113, 0.18);
+  color: #f87171;
   font-weight: 600;
 }
-.cell-info-low { background: rgba(96, 165, 250, 0.08); }
+.cell-info-low { color: #93c5fd; }
 .cell-info-mid {
-  color: #bfdbfe;
-  background: rgba(96, 165, 250, 0.14);
+  color: #60a5fa;
   font-weight: 500;
 }
 .cell-info-high {
   color: #dbeafe;
-  background: rgba(96, 165, 250, 0.22);
   font-weight: 600;
 }
 body.light-mode .cell-good {
   color: #166534;
-  background: rgba(34, 197, 94, 0.18);
 }
 body.light-mode .cell-mid {
-  color: #854d0e;
-  background: rgba(250, 204, 21, 0.2);
+  color: #b45309;
 }
 body.light-mode .cell-bad {
-  color: #991b1b;
-  background: rgba(248, 113, 113, 0.18);
+  color: #b91c1c;
 }
-body.light-mode .cell-info-low { background: rgba(59, 130, 246, 0.08); }
+body.light-mode .cell-info-low { color: #2563eb; }
 body.light-mode .cell-info-mid {
   color: #1d4ed8;
-  background: rgba(59, 130, 246, 0.14);
 }
 body.light-mode .cell-info-high {
   color: #1e3a8a;
-  background: rgba(59, 130, 246, 0.22);
-}
-body.light-mode .histogram-card {
-  background: rgba(248, 250, 252, 0.95);
-  border-color: rgba(148, 163, 184, 0.35);
 }
 
 /* Larger commands in docs */

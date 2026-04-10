@@ -1,7 +1,5 @@
 <script>
 (function(){
-  var histogramColors = ['#22c55e', '#06b6d4', '#6366f1', '#8b5cf6', '#ec4899', '#f97316', '#eab308'];
-
   function parseNumericValue(text) {
     if (!text) return NaN;
     var cleaned = text.trim().replace(/,/g, '');
@@ -79,81 +77,6 @@
     maintainer.className = 'site-footer-maintainer';
     maintainer.innerHTML = 'Maintained by <a href="https://github.com/LokeshVenkatachalam">Lokesh Venkatachalam</a>';
     footer.insertBefore(maintainer, footer.firstChild);
-  }
-
-  function parseHistogramBuckets(text) {
-    var parts = text.indexOf('|') >= 0 ? text.split('|') : [text];
-    var buckets = [];
-
-    parts.forEach(function(part) {
-      var match = part.trim().match(/^(.+?)\u2192([\d,]+)$/);
-      if (!match) return;
-      buckets.push({
-        label: match[1].trim(),
-        count: parseInt(match[2].replace(/,/g, ''), 10)
-      });
-    });
-
-    return buckets;
-  }
-
-  function renderHistogramTables() {
-    document.querySelectorAll('.main-content p').forEach(function(paragraph) {
-      if (paragraph.dataset.histogramReady === 'true') return;
-
-      var code = paragraph.querySelector('code');
-      if (!code) return;
-
-      var rawText = code.textContent || '';
-      if (rawText.indexOf('\u2192') === -1) return;
-
-      var buckets = parseHistogramBuckets(rawText);
-      if (!buckets.length || !paragraph.parentNode) return;
-
-      var titleText = paragraph.textContent.replace(rawText, '').trim().replace(/:\s*$/, '');
-      var total = buckets.reduce(function(sum, bucket) {
-        return sum + bucket.count;
-      }, 0);
-
-      var card = document.createElement('div');
-      card.className = 'histogram-card';
-
-      var title = document.createElement('div');
-      title.className = 'histogram-title';
-      title.textContent = titleText;
-      card.appendChild(title);
-
-      var table = document.createElement('table');
-      table.className = 'hist-table';
-      table.innerHTML = '<thead><tr><th>Bucket</th><th>Count</th><th>Share</th></tr></thead><tbody></tbody>';
-
-      var tbody = table.querySelector('tbody');
-      buckets.forEach(function(bucket, index) {
-        var row = document.createElement('tr');
-
-        var labelCell = document.createElement('td');
-        var swatch = document.createElement('span');
-        swatch.className = 'hist-swatch';
-        swatch.style.backgroundColor = histogramColors[index % histogramColors.length];
-        labelCell.appendChild(swatch);
-        labelCell.appendChild(document.createTextNode(bucket.label));
-
-        var countCell = document.createElement('td');
-        countCell.textContent = bucket.count.toLocaleString();
-
-        var shareCell = document.createElement('td');
-        shareCell.textContent = total ? ((bucket.count / total) * 100).toFixed(2) + '%' : '0.00%';
-
-        row.appendChild(labelCell);
-        row.appendChild(countCell);
-        row.appendChild(shareCell);
-        tbody.appendChild(row);
-      });
-
-      card.appendChild(table);
-      paragraph.dataset.histogramReady = 'true';
-      paragraph.parentNode.replaceChild(card, paragraph);
-    });
   }
 
   function getHeaderRow(table) {
@@ -310,7 +233,6 @@
   function initSiteEnhancements() {
     ensureThemeToggle();
     ensureMaintainerFooter();
-    renderHistogramTables();
     makeTablesSortable();
     applyResultColoring();
   }

@@ -77,25 +77,39 @@ li { margin: 0.2rem 0 !important; line-height: 1.5; }
 
 /* --- TOGGLE --- */
 .theme-toggle {
-  position: fixed; top: 0.75rem; right: 0.75rem; z-index: 9999;
-  background: rgba(128,128,128,0.2); border: 1px solid rgba(128,128,128,0.3);
-  border-radius: 20px; padding: 0.3rem 0.7rem; cursor: pointer;
+  position: fixed; right: 1rem; bottom: 1rem; z-index: 9999;
+  background: rgba(17,24,39,0.88); border: 1px solid rgba(148,163,184,0.35);
+  border-radius: 999px; padding: 0.38rem 0.78rem; cursor: pointer;
   font-size: 0.75rem; display: flex; align-items: center; gap: 0.4rem;
-  backdrop-filter: blur(4px); transition: all 0.2s; color: inherit;
+  backdrop-filter: blur(4px); transition: all 0.2s; color: #f9fafb;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.22);
 }
-.theme-toggle:hover { background: rgba(128,128,128,0.35); }
+.theme-toggle:hover { background: rgba(31,41,55,0.95); }
 .theme-toggle-icon { font-size: 1rem; line-height: 1; }
+@media (max-width: 50rem) {
+  .theme-toggle {
+    right: 0.75rem;
+    bottom: 0.75rem;
+    font-size: 0.7rem;
+    padding: 0.34rem 0.7rem;
+  }
+}
 
 /* --- LIGHT MODE --- */
-body.light-mode .side-bar { background-color: #f5f6fa !important; }
-body.light-mode .main { background-color: #fff !important; color: #27262b !important; }
-body.light-mode h1, body.light-mode h2, body.light-mode h3, body.light-mode h4 { color: #27262b !important; }
+body.light-mode .side-bar { background-color: #eef2f7 !important; }
+body.light-mode .main { background-color: #fff !important; color: #1f2937 !important; }
+body.light-mode h1, body.light-mode h2, body.light-mode h3, body.light-mode h4 { color: #111827 !important; }
 body.light-mode h2 { border-bottom-color: rgba(0,0,0,0.1); }
-body.light-mode a { color: #2563eb !important; }
-body.light-mode code { background-color: #f0f0f0 !important; color: #d63384 !important; }
+body.light-mode a { color: #1d4ed8 !important; }
+body.light-mode code { background-color: #eef2ff !important; color: #1e3a8a !important; }
 body.light-mode table td strong { color: #16a34a !important; }
-body.light-mode table tr:hover td { background-color: rgba(0,0,0,0.03) !important; }
-body.light-mode .theme-toggle { background: rgba(200,200,200,0.4); border-color: rgba(0,0,0,0.15); color: #333; }
+body.light-mode table tr:hover td { background-color: rgba(15,23,42,0.04) !important; }
+body.light-mode .theme-toggle {
+  background: rgba(255,255,255,0.94);
+  border-color: rgba(15,23,42,0.16);
+  color: #111827;
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.12);
+}
 
 /* --- FOOTER: sidebar only --- */
 footer .site-footer, footer .d-md-none, main ~ footer { display: none !important; }

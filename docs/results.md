@@ -15,7 +15,7 @@ Parallel SCC analysis using [par-scc](https://github.com/nrodia/par-scc) (Method
 - **SCC timed at:** 1, 32, 64, 128 threads
 
 {: .note }
-> Tip: click any table header to sort. Green highlights faster/better results, amber marks middle-range values, red highlights slower/weaker values, and blue shading marks structural graph counts.
+> Tip: click any table header to sort. Green/amber/red **text** highlights faster-or-better, middle-range, and slower-or-weaker values, while blue text is used for structural graph counts.
 
 ## 1. Original Graphs (BGR)
 
@@ -73,51 +73,34 @@ Parallel SCC analysis using [par-scc](https://github.com/nrodia/par-scc) (Method
 | webbase-1M_connected | 2,108,301 | 47.1ms | 67.4ms | 58.7ms | 98.0ms | 122.8ms | 0.5x |
 | GD96_a | 1,677 | 10.1ms | 0.1ms | 0.6ms | 0.8ms | 35.2ms | 0.0x |
 
-### SCC Size Histograms
+### SCC Size Matrix
 
-**MOLIERE_2016** (25,026 SCCs): `1-10→25,006 | 11-100→19 | 10M-100M→1`
+Each row is a graph and each column is an SCC-size bucket; the cell value is the number of SCCs that fall into that size range.
 
-**GAP-urand** (1 SCCs): `100M-1B→1`
-
-**GAP-kron** (71,164,263 SCCs): `1-10→71,164,262 | 10M-100M→1`
-
-**com-Friendster** (1 SCCs): `10M-100M→1`
-
-**sk-2005** (8,815,057 SCCs): `1-10→8,797,233 | 11-100→15,306 | 101-1K→2,028 | 1K-10K→395 | 10K-100K→92 | 100K-1M→2 | 10M-100M→1`
-
-**twitter7** (8,044,728 SCCs): `1-10→8,044,495 | 11-100→229 | 101-1K→3 | 10M-100M→1`
-
-**it-2004** (6,753,961 SCCs): `1-10→6,707,227 | 11-100→41,765 | 101-1K→4,380 | 1K-10K→587 | 10K-100K→1 | 10M-100M→1`
-
-**webbase-2001** (41,126,852 SCCs): `1-10→40,775,776 | 11-100→319,505 | 101-1K→29,157 | 1K-10K→2,413 | 10M-100M→1`
-
-**uk-2005** (5,811,041 SCCs): `1-10→5,725,130 | 11-100→70,091 | 101-1K→15,676 | 1K-10K→133 | 10K-100K→9 | 100K-1M→1 | 10M-100M→1`
-
-**nlpkkt240** (1 SCCs): `10M-100M→1`
-
-**arabic-2005** (4,000,414 SCCs): `1-10→3,982,699 | 11-100→14,821 | 101-1K→2,309 | 1K-10K→570 | 10K-100K→14 | 10M-100M→1`
-
-**kmer_V1r** (9 SCCs): `11-100→5 | 101-1K→3 | 100M-1B→1`
-
-**kmer_A2a** (5,353 SCCs): `11-100→4,615 | 101-1K→737 | 100M-1B→1`
-
-**com-Orkut** (1 SCCs): `1M-10M→1`
-
-**indochina-2004** (1,749,052 SCCs): `1-10→1,734,052 | 11-100→13,146 | 101-1K→1,576 | 1K-10K→274 | 10K-100K→3 | 1M-10M→1`
-
-**europe_osm** (1 SCCs): `10M-100M→1`
-
-**delaunay_n24** (1 SCCs): `10M-100M→1`
-
-**com-LiveJournal** (1 SCCs): `1M-10M→1`
-
-**road_usa** (1 SCCs): `10M-100M→1`
-
-**road_central** (1 SCCs): `10M-100M→1`
-
-**webbase-1M_connected** (940,398 SCCs): `1-10→939,887 | 11-100→412 | 101-1K→92 | 1K-10K→7`
-
-**GD96_a** (1,096 SCCs): `1-10→1,096`
+| Graph | 1-10 | 11-100 | 101-1K | 1K-10K | 10K-100K | 100K-1M | 1M-10M | 10M-100M | 100M-1B |
+|:------|-----:|-------:|--------:|-------:|---------:|---------:|--------:|----------:|---------:|
+| MOLIERE_2016 | 25,006 | 19 | 0 | 0 | 0 | 0 | 0 | 1 | 0 |
+| GAP-urand | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 1 |
+| GAP-kron | 71,164,262 | 0 | 0 | 0 | 0 | 0 | 0 | 1 | 0 |
+| com-Friendster | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 1 | 0 |
+| sk-2005 | 8,797,233 | 15,306 | 2,028 | 395 | 92 | 2 | 0 | 1 | 0 |
+| twitter7 | 8,044,495 | 229 | 3 | 0 | 0 | 0 | 0 | 1 | 0 |
+| it-2004 | 6,707,227 | 41,765 | 4,380 | 587 | 1 | 0 | 0 | 1 | 0 |
+| webbase-2001 | 40,775,776 | 319,505 | 29,157 | 2,413 | 0 | 0 | 0 | 1 | 0 |
+| uk-2005 | 5,725,130 | 70,091 | 15,676 | 133 | 9 | 1 | 0 | 1 | 0 |
+| nlpkkt240 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 1 | 0 |
+| arabic-2005 | 3,982,699 | 14,821 | 2,309 | 570 | 14 | 0 | 0 | 1 | 0 |
+| kmer_V1r | 0 | 5 | 3 | 0 | 0 | 0 | 0 | 0 | 1 |
+| kmer_A2a | 0 | 4,615 | 737 | 0 | 0 | 0 | 0 | 0 | 1 |
+| com-Orkut | 0 | 0 | 0 | 0 | 0 | 0 | 1 | 0 | 0 |
+| indochina-2004 | 1,734,052 | 13,146 | 1,576 | 274 | 3 | 0 | 1 | 0 | 0 |
+| europe_osm | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 1 | 0 |
+| delaunay_n24 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 1 | 0 |
+| com-LiveJournal | 0 | 0 | 0 | 0 | 0 | 0 | 1 | 0 | 0 |
+| road_usa | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 1 | 0 |
+| road_central | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 1 | 0 |
+| webbase-1M_connected | 939,887 | 412 | 92 | 7 | 0 | 0 | 0 | 0 | 0 |
+| GD96_a | 1,096 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
 
 ## 2. Directed Graphs (BGR Directed)
 
@@ -161,35 +144,26 @@ These are the undirected graphs from bgr/ converted to directed by randomly assi
 | road_usa | 28,854,312 | 215.0ms | 2.9s | 1.6s | 1.8s | 2.4s | 1.2x |
 | road_central | 16,933,413 | 130.8ms | 1.8s | 1.1s | 1.2s | 2.0s | 0.9x |
 
-### SCC Size Histograms
+### SCC Size Matrix
 
-**AGATHA_2015** (21,543,534 SCCs): `1-10→21,543,533 | 100M-1B→1`
+Each row is a graph and each column is an SCC-size bucket; the cell value is the number of SCCs that fall into that size range.
 
-**MOLIERE_2016** (1,711,655 SCCs): `1-10→1,711,564 | 11-100→90 | 10M-100M→1`
-
-**GAP-urand** (30 SCCs): `1-10→29 | 100M-1B→1`
-
-**GAP-kron** (93,498,642 SCCs): `1-10→93,498,641 | 10M-100M→1`
-
-**com-Friendster** (18,653,098 SCCs): `1-10→18,653,056 | 11-100→41 | 10M-100M→1`
-
-**nlpkkt240** (1,460 SCCs): `1-10→1,459 | 10M-100M→1`
-
-**kmer_V1r** (213,166,902 SCCs): `1-10→213,162,906 | 11-100→3,969 | 101-1K→26 | 100K-1M→1`
-
-**kmer_A2a** (170,196,274 SCCs): `1-10→170,195,225 | 11-100→1,014 | 101-1K→34 | 100K-1M→1`
-
-**com-Orkut** (108,992 SCCs): `1-10→108,991 | 1M-10M→1`
-
-**europe_osm** (50,554,255 SCCs): `1-10→50,550,563 | 11-100→3,687 | 101-1K→5`
-
-**delaunay_n24** (953,904 SCCs): `1-10→953,811 | 11-100→92 | 10M-100M→1`
-
-**com-LiveJournal** (1,202,554 SCCs): `1-10→1,202,200 | 11-100→350 | 101-1K→3 | 1M-10M→1`
-
-**road_usa** (22,610,811 SCCs): `1-10→22,589,237 | 11-100→21,473 | 101-1K→101`
-
-**road_central** (13,312,344 SCCs): `1-10→13,299,482 | 11-100→12,809 | 101-1K→53`
+| Graph | 1-10 | 11-100 | 101-1K | 1K-10K | 10K-100K | 100K-1M | 1M-10M | 10M-100M | 100M-1B |
+|:------|-----:|-------:|--------:|-------:|---------:|---------:|--------:|----------:|---------:|
+| AGATHA_2015 | 21,543,533 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 1 |
+| MOLIERE_2016 | 1,711,564 | 90 | 0 | 0 | 0 | 0 | 0 | 1 | 0 |
+| GAP-urand | 29 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 1 |
+| GAP-kron | 93,498,641 | 0 | 0 | 0 | 0 | 0 | 0 | 1 | 0 |
+| com-Friendster | 18,653,056 | 41 | 0 | 0 | 0 | 0 | 0 | 1 | 0 |
+| nlpkkt240 | 1,459 | 0 | 0 | 0 | 0 | 0 | 0 | 1 | 0 |
+| kmer_V1r | 213,162,906 | 3,969 | 26 | 0 | 0 | 1 | 0 | 0 | 0 |
+| kmer_A2a | 170,195,225 | 1,014 | 34 | 0 | 0 | 1 | 0 | 0 | 0 |
+| com-Orkut | 108,991 | 0 | 0 | 0 | 0 | 0 | 1 | 0 | 0 |
+| europe_osm | 50,550,563 | 3,687 | 5 | 0 | 0 | 0 | 0 | 0 | 0 |
+| delaunay_n24 | 953,811 | 92 | 0 | 0 | 0 | 0 | 0 | 1 | 0 |
+| com-LiveJournal | 1,202,200 | 350 | 3 | 0 | 0 | 0 | 1 | 0 | 0 |
+| road_usa | 22,589,237 | 21,473 | 101 | 0 | 0 | 0 | 0 | 0 | 0 |
+| road_central | 13,299,482 | 12,809 | 53 | 0 | 0 | 0 | 0 | 0 | 0 |
 
 ## 3. Skipped Graphs
 
