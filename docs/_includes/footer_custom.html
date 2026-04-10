@@ -42,9 +42,28 @@
   }
 
   function ensureThemeToggle() {
-    if (document.querySelector('.theme-toggle')) return;
-    var button = document.createElement('button');
-    button.className = 'theme-toggle';
+    var button = document.querySelector('.theme-toggle');
+    if (!button) {
+      button = document.createElement('button');
+      button.className = 'theme-toggle';
+      button.type = 'button';
+    }
+
+    var navList = document.querySelector('.aux-nav-list');
+    if (navList) {
+      var item = navList.querySelector('.theme-toggle-item');
+      if (!item) {
+        item = document.createElement('li');
+        item.className = 'aux-nav-list-item theme-toggle-item';
+        navList.appendChild(item);
+      }
+      if (button.parentNode !== item) {
+        item.appendChild(button);
+      }
+    } else if (!button.parentNode) {
+      document.body.appendChild(button);
+    }
+
     var isLight = localStorage.getItem('theme') === 'light';
 
     if (isLight) {
@@ -52,11 +71,14 @@
     }
 
     function updateLabel(lightMode) {
-      button.textContent = lightMode ? 'Dark mode' : 'Light mode';
+      var icon = lightMode ? '🌙' : '☀';
+      var label = lightMode ? 'Switch to dark mode' : 'Switch to light mode';
+      button.innerHTML = '<span class="theme-toggle-icon" aria-hidden="true">' + icon + '</span>';
+      button.setAttribute('aria-label', label);
+      button.setAttribute('title', label);
     }
 
     updateLabel(isLight);
-    document.body.appendChild(button);
 
     button.onclick = function() {
       document.body.classList.toggle('light-mode');
