@@ -45,6 +45,19 @@
     return 'neutral';
   }
 
+  function isPerformanceTable(headerModes, headerRow) {
+    if (!headerRow) return false;
+    var headerText = Array.prototype.map.call(headerRow.cells, function(cell) {
+      return (cell.textContent || '').toLowerCase().trim();
+    }).join(' | ');
+
+    if (/speedup|load|1 thread|32 threads|64 threads|128 threads|timing|thread scaling|\bms\b/.test(headerText)) {
+      return true;
+    }
+
+    return headerModes.indexOf('low-good') !== -1 || headerModes.indexOf('high-good') !== -1;
+  }
+
   function ensureThemeToggle() {
     var button = document.querySelector('.theme-toggle');
     if (!button) {
@@ -215,6 +228,7 @@
       var headerModes = Array.prototype.map.call(headerRow.cells, function(headerCell) {
         return classifyHeader(headerCell.textContent);
       });
+      var performanceTable = isPerformanceTable(headerModes, headerRow);
 
       rows.forEach(function(row) {
         var lowGoodItems = [];
@@ -271,6 +285,12 @@
             else applyCellClass(item.cell, 'cell-info-mid');
           });
         });
+
+        if (performanceTable) {
+          neutralItems.forEach(function(item) {
+            clearCellClasses(item.cell);
+          });
+        }
       });
     });
   }
