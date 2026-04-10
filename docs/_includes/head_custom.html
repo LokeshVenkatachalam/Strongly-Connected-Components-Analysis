@@ -1,15 +1,29 @@
+<!-- Tablesort: lightweight sortable tables -->
+<script src="https://cdn.jsdelivr.net/npm/tablesort@5.3.0/dist/tablesort.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/tablesort@5.3.0/dist/sorts/tablesort.number.min.js"></script>
+
 <style>
-.table-sort-bar { display:flex; align-items:center; gap:0.5rem; margin-bottom:0.5rem; font-size:0.78rem; }
-.table-sort-bar label { opacity:0.6; white-space:nowrap; }
-.table-sort-bar select, .table-sort-bar button {
-  background:rgba(128,128,128,0.15); color:inherit; border:1px solid rgba(128,128,128,0.3);
-  border-radius:4px; padding:0.2rem 0.4rem; font-size:0.78rem; cursor:pointer;
-}
-.table-sort-bar select:hover, .table-sort-bar button:hover { background:rgba(128,128,128,0.3); }
-.hist-row { display:flex; gap:1px; align-items:flex-end; height:2rem; margin:0.2rem 0; }
-.hist-bar { display:inline-flex; flex-direction:column; align-items:center; min-width:28px; position:relative; }
-.hist-bar-fill { width:100%; border-radius:2px 2px 0 0; background:#6366f1; min-height:2px; }
-.hist-bar-label { font-size:0.55rem; opacity:0.5; margin-top:1px; white-space:nowrap; }
-.hist-bar-val { font-size:0.6rem; margin-bottom:1px; white-space:nowrap; }
-body.light-mode .hist-bar-fill { background:#4f46e5; }
+/* Tablesort styling */
+table th[role=columnheader] { cursor: pointer; user-select: none; }
+table th[aria-sort=ascending]::after { content: " ▲"; font-size: 0.7em; opacity: 0.6; }
+table th[aria-sort=descending]::after { content: " ▼"; font-size: 0.7em; opacity: 0.6; }
+table th[role=columnheader]:not([aria-sort])::after { content: " ⇅"; font-size: 0.7em; opacity: 0.25; }
+
+/* Histogram table: compact colored bars */
+.hist-table { border-collapse: collapse; font-size: 0.72rem; margin: 0.3rem 0; }
+.hist-table td { padding: 1px 6px; text-align: center; border: none; }
+.hist-table .hist-bar-cell { height: 18px; border-radius: 2px; }
+.hist-table .hist-label { opacity: 0.5; font-size: 0.62rem; }
+
+/* Color coding for timing cells */
+.cell-fast { color: #4ade80; font-weight: 600; }
+.cell-mid { color: #facc15; }
+.cell-slow { color: #f87171; }
+body.light-mode .cell-fast { color: #16a34a; font-weight: 600; }
+body.light-mode .cell-mid { color: #ca8a04; }
+body.light-mode .cell-slow { color: #dc2626; }
+
+/* Larger code blocks in docs */
+.main-content pre { font-size: 0.88rem !important; }
+.main-content code { font-size: 0.88em !important; }
 </style>

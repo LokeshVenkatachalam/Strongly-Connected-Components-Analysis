@@ -14,7 +14,7 @@ Parallel SCC analysis using [par-scc](https://github.com/nrodia/par-scc) (Method
 - **Hardware:** 144 cores, 377GB RAM; graph loaded once with 64 threads
 - **SCC timed at:** 1, 32, 64, 128 threads
 
-## 1. Original Graphs (`/ssd/Graphs/bgr`)
+## 1. Original Graphs (BGR)
 
 ### SCC Summary
 
@@ -116,7 +116,7 @@ Parallel SCC analysis using [par-scc](https://github.com/nrodia/par-scc) (Method
 
 **GD96_a** (1,096 SCCs): `1-10→1,096`
 
-## 2. Directed Graphs (`/ssd/Graphs/bgr_directed`)
+## 2. Directed Graphs (BGR Directed)
 
 These are the undirected graphs from bgr/ converted to directed by randomly assigning one direction per edge.
 
