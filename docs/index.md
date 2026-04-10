@@ -63,6 +63,46 @@ par-scc shows **poor scaling on web graphs** (1–2× at 128T) due to sequential
 
 ---
 
+## LV Favicon Concepts
+
+Here are **5 favicon color options** based on the bold **LV monogram + SCC loop** idea.
+The browser tab currently uses **Option 1** so you can compare it live.
+
+<div class="favicon-grid">
+  <div class="favicon-card active">
+    <img src="{{ '/assets/favicons/lv-loop-midnight-emerald.svg' | relative_url }}" alt="Option 1 midnight emerald favicon">
+    <strong>Option 1 — Midnight Emerald</strong>
+    <code>#0B1F4D</code> + <code>#34D399</code>
+    <p>Current favicon</p>
+  </div>
+  <div class="favicon-card">
+    <img src="{{ '/assets/favicons/lv-loop-cobalt-mint.svg' | relative_url }}" alt="Option 2 cobalt mint favicon">
+    <strong>Option 2 — Cobalt Mint</strong>
+    <code>#163B74</code> + <code>#2DD4BF</code>
+    <p>Brighter blue, softer mint loop</p>
+  </div>
+  <div class="favicon-card">
+    <img src="{{ '/assets/favicons/lv-loop-indigo-lime.svg' | relative_url }}" alt="Option 3 indigo lime favicon">
+    <strong>Option 3 — Indigo Lime</strong>
+    <code>#1E1B4B</code> + <code>#84CC16</code>
+    <p>More contrast with a lime accent</p>
+  </div>
+  <div class="favicon-card">
+    <img src="{{ '/assets/favicons/lv-loop-slate-jade.svg' | relative_url }}" alt="Option 4 slate jade favicon">
+    <strong>Option 4 — Slate Jade</strong>
+    <code>#0F172A</code> + <code>#10B981</code>
+    <p>Darkest, most understated version</p>
+  </div>
+  <div class="favicon-card">
+    <img src="{{ '/assets/favicons/lv-loop-royal-cyan.svg' | relative_url }}" alt="Option 5 royal cyan favicon">
+    <strong>Option 5 — Royal Cyan</strong>
+    <code>#1D2D6C</code> + <code>#22D3EE</code>
+    <p>Cooler accent with a brighter loop</p>
+  </div>
+</div>
+
+---
+
 ## Graphs
 
 **36 graphs** from two collections, all in [BGR format](https://github.com/hpc-heterogeneous-graph-algorithms/graph-format-converters):

@@ -2,6 +2,8 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
+<link rel="icon" type="image/svg+xml" href="{{ '/assets/favicons/lv-loop-midnight-emerald.svg' | relative_url }}">
+<link rel="shortcut icon" href="{{ '/assets/favicons/lv-loop-midnight-emerald.svg' | relative_url }}">
 
 <style>
 /* Sort indicators */
@@ -21,6 +23,48 @@
 }
 .sortable-table th[aria-sort=ascending]::after { content: " ▲"; opacity: 0.8; }
 .sortable-table th[aria-sort=descending]::after { content: " ▼"; opacity: 0.8; }
+
+/* Favicon preview cards */
+.favicon-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 1rem;
+  margin: 1rem 0 1.5rem;
+}
+.favicon-card {
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  border-radius: 12px;
+  padding: 1rem 0.9rem;
+  text-align: center;
+  background: rgba(15, 23, 42, 0.22);
+}
+.favicon-card.active {
+  border-color: rgba(52, 211, 153, 0.7);
+  box-shadow: inset 0 0 0 1px rgba(52, 211, 153, 0.18);
+}
+.favicon-card img {
+  width: 72px;
+  height: 72px;
+  display: block;
+  margin: 0 auto 0.7rem;
+}
+.favicon-card strong {
+  display: block;
+  margin-bottom: 0.35rem;
+}
+.favicon-card p {
+  margin: 0.35rem 0 0;
+  font-size: 0.82rem;
+  opacity: 0.8;
+}
+body.light-mode .favicon-card {
+  background: #f8fafc;
+  border-color: rgba(15, 23, 42, 0.12);
+}
+body.light-mode .favicon-card.active {
+  border-color: rgba(5, 150, 105, 0.65);
+  box-shadow: inset 0 0 0 1px rgba(5, 150, 105, 0.16);
+}
 
 /* Result color coding */
 .cell-good,
