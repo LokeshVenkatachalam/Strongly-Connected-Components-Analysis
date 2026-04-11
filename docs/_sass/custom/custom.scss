@@ -171,10 +171,12 @@ body.light-mode .nav-list-expander,
 body.light-mode .search-input,
 body.light-mode .search-label,
 body.light-mode .search-results,
-body.light-mode table td,
 body.light-mode table th,
 body.light-mode p,
 body.light-mode li {
+  color: #111827 !important;
+}
+body.light-mode table td:not(.cell-good):not(.cell-mid):not(.cell-bad):not(.cell-info-low):not(.cell-info-mid):not(.cell-info-high) {
   color: #111827 !important;
 }
 body.light-mode .table-wrapper {

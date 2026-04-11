@@ -81,11 +81,13 @@
       document.body.appendChild(button);
     }
 
-    var isLight = localStorage.getItem('theme') === 'light';
-
-    if (isLight) {
-      document.body.classList.add('light-mode');
+    var savedTheme = localStorage.getItem('theme');
+    if (savedTheme !== 'light' && savedTheme !== 'dark') {
+      savedTheme = 'dark';
+      localStorage.setItem('theme', 'dark');
     }
+    var isLight = savedTheme === 'light';
+    document.body.classList.toggle('light-mode', isLight);
 
     function updateLabel(lightMode) {
       var icon = lightMode ? '🌙' : '☀';
