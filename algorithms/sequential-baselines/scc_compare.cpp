@@ -33,6 +33,10 @@ constexpr uint64_t kDeadlineCheckInterval = 1ULL << 20;
 
 static_assert(sizeof(size_t) == 8 && sizeof(off_t) == 8,
               "a 64-bit platform is required");
+static_assert(
+    sizeof(EdgeIndex) == 8 &&
+        std::numeric_limits<EdgeIndex>::max() > uint64_t{91792261600ULL},
+    "edge indices must represent graphs larger than 2^32 edges");
 
 double elapsedSeconds(Clock::time_point start) {
   return std::chrono::duration<double>(Clock::now() - start).count();
@@ -509,6 +513,294 @@ SccResult runGabow(const Graph& graph, double limitSeconds) {
   return result;
 }
 
+/*
+ * The Pearce and Tarjan-Zwick implementations below are C++ adaptations of
+ * scipy/sparse/csgraph/_traversal.pyx. SciPy is distributed under the BSD
+ * 3-Clause license; see SCIPY_LICENSE.txt. The adaptations use checked BGR
+ * access, 64-bit edge positions, deadlines, progress reporting, and canonical
+ * minimum-vertex component labels.
+ */
+template <class Graph>
+SccResult runPearce(const Graph& graph, double limitSeconds) {
+  const auto start = Clock::now();
+  const Deadline deadline(limitSeconds, start);
+  const uint64_t vertexCount = graph.vertexCount();
+  constexpr Vertex kStackEnd = kNoVertex - 1;
+  if (vertexCount >= kStackEnd) {
+    throw std::runtime_error(
+        "Pearce requires fewer than 2^32-2 vertices");
+  }
+
+  SccResult result;
+  result.labels.reset(new Vertex[vertexCount]);
+  std::fill_n(result.labels.get(), vertexCount, kNoVertex);
+  if (vertexCount == 0) return result;
+
+  std::unique_ptr<Vertex[]> lowLink(new Vertex[vertexCount]);
+  std::unique_ptr<Vertex[]> sharedLink(new Vertex[vertexCount]);
+  std::unique_ptr<Vertex[]> stackBackward(new Vertex[vertexCount]);
+  std::fill_n(lowLink.get(), vertexCount, kNoVertex);
+  std::fill_n(sharedLink.get(), vertexCount, kNoVertex);
+  std::fill_n(stackBackward.get(), vertexCount, kNoVertex);
+
+  Vertex componentStackHead = kStackEnd;
+  Vertex dfsStackHead = kStackEnd;
+  uint64_t index = 0;
+
+  for (uint64_t root = 0; root < vertexCount; ++root) {
+    if (lowLink[root] != kNoVertex) continue;
+    deadline.check(result.scannedEdges, true);
+
+    dfsStackHead = static_cast<Vertex>(root);
+    sharedLink[root] = kStackEnd;
+    stackBackward[root] = kStackEnd;
+
+    while (dfsStackHead != kStackEnd) {
+      const Vertex vertex = dfsStackHead;
+      if (lowLink[vertex] == kNoVertex) {
+        lowLink[vertex] = static_cast<Vertex>(index++);
+        ++result.discoveredVertices;
+
+        for (EdgeIndex edge = graph.edgeBegin(vertex);
+             edge < graph.edgeEnd(vertex); ++edge) {
+          const Vertex destination = graph.destination(edge);
+          ++result.scannedEdges;
+          deadline.check(result.scannedEdges);
+          reportProgress("pearce", result, start);
+          if (lowLink[destination] != kNoVertex) continue;
+          if (destination == dfsStackHead) continue;
+
+          if (sharedLink[destination] != kNoVertex) {
+            const Vertex forward = sharedLink[destination];
+            const Vertex backward = stackBackward[destination];
+            if (backward != kStackEnd) {
+              sharedLink[backward] = forward;
+            }
+            if (forward != kStackEnd) {
+              stackBackward[forward] = backward;
+            }
+          }
+
+          sharedLink[destination] = dfsStackHead;
+          stackBackward[destination] = kStackEnd;
+          stackBackward[dfsStackHead] = destination;
+          dfsStackHead = destination;
+        }
+        continue;
+      }
+
+      dfsStackHead = sharedLink[vertex];
+      if (dfsStackHead != kStackEnd) {
+        stackBackward[dfsStackHead] = kStackEnd;
+      }
+      sharedLink[vertex] = kNoVertex;
+      stackBackward[vertex] = kNoVertex;
+
+      bool isRoot = true;
+      Vertex low = lowLink[vertex];
+      for (EdgeIndex edge = graph.edgeBegin(vertex);
+           edge < graph.edgeEnd(vertex); ++edge) {
+        const Vertex destination = graph.destination(edge);
+        ++result.scannedEdges;
+        deadline.check(result.scannedEdges);
+        reportProgress("pearce", result, start);
+        if (result.labels[destination] == kNoVertex &&
+            lowLink[destination] < low) {
+          low = lowLink[destination];
+          isRoot = false;
+        }
+      }
+      lowLink[vertex] = low;
+
+      if (!isRoot) {
+        sharedLink[vertex] = componentStackHead;
+        componentStackHead = vertex;
+        continue;
+      }
+
+      if (index == 0) {
+        throw std::runtime_error("Pearce index underflow");
+      }
+      --index;
+      const Vertex oldHead = componentStackHead;
+      Vertex newHead = oldHead;
+      Vertex minimum = vertex;
+      uint64_t componentSize = 1;
+      while (newHead != kStackEnd &&
+             lowLink[vertex] <= lowLink[newHead]) {
+        minimum = std::min(minimum, newHead);
+        ++componentSize;
+        newHead = sharedLink[newHead];
+        if (index == 0) {
+          throw std::runtime_error("Pearce index underflow");
+        }
+        --index;
+      }
+
+      Vertex member = oldHead;
+      while (member != newHead) {
+        const Vertex next = sharedLink[member];
+        result.labels[member] = minimum;
+        sharedLink[member] = kNoVertex;
+        member = next;
+      }
+      componentStackHead = newHead;
+      result.labels[vertex] = minimum;
+      result.assignedVertices += componentSize;
+      result.largest = std::max(result.largest, componentSize);
+      ++result.components;
+    }
+  }
+
+  if (result.discoveredVertices != vertexCount ||
+      result.assignedVertices != vertexCount ||
+      result.scannedEdges != checkedMultiply(graph.edgeCount(), 2) ||
+      componentStackHead != kStackEnd || index != 0) {
+    throw std::runtime_error("Pearce coverage invariant failed");
+  }
+  return result;
+}
+
+template <class Graph>
+SccResult runTarjanZwick(const Graph& graph, double limitSeconds) {
+  const auto start = Clock::now();
+  const Deadline deadline(limitSeconds, start);
+  const uint64_t vertexCount = graph.vertexCount();
+  constexpr Vertex kNonLead = Vertex{1} << 31;
+  constexpr Vertex kNodeMask = kNonLead - 1;
+  if (vertexCount > kNodeMask) {
+    throw std::runtime_error(
+        "Tarjan-Zwick requires at most 2^31-1 vertices");
+  }
+
+  SccResult result;
+  result.labels.reset(new Vertex[vertexCount]);
+  std::fill_n(result.labels.get(), vertexCount, kNoVertex);
+  if (vertexCount == 0) return result;
+
+  constexpr EdgeIndex kUnvisited = std::numeric_limits<EdgeIndex>::max();
+  std::unique_ptr<EdgeIndex[]> successorPosition(
+      new EdgeIndex[vertexCount]);
+  std::unique_ptr<Vertex[]> highLink(new Vertex[vertexCount]);
+  std::unique_ptr<Vertex[]> stack(new Vertex[vertexCount]);
+  std::fill_n(successorPosition.get(), vertexCount, kUnvisited);
+
+  uint64_t dfsSize = 0;
+  uint64_t componentSize = 0;
+  uint64_t index = vertexCount;
+  bool done = false;
+
+  auto decode = [&](Vertex encoded) { return encoded & kNodeMask; };
+  auto pushDfs = [&](Vertex encoded) {
+    if (dfsSize + componentSize >= vertexCount) {
+      throw std::runtime_error("Tarjan-Zwick stack overflow");
+    }
+    stack[dfsSize++] = encoded;
+  };
+  auto pushComponent = [&](Vertex vertex) {
+    if (dfsSize + componentSize >= vertexCount) {
+      throw std::runtime_error("Tarjan-Zwick stack overflow");
+    }
+    stack[vertexCount - ++componentSize] = vertex;
+  };
+  auto componentTop = [&]() {
+    return stack[vertexCount - componentSize];
+  };
+
+  for (uint64_t root = 0; root < vertexCount; ++root) {
+    if (successorPosition[root] != kUnvisited) continue;
+    deadline.check(result.scannedEdges, true);
+
+    const Vertex rootHighLink = static_cast<Vertex>(index);
+    const Vertex rootVertex = static_cast<Vertex>(root);
+    pushDfs(rootVertex);
+    highLink[rootVertex] = static_cast<Vertex>(index--);
+    successorPosition[rootVertex] = graph.edgeBegin(rootVertex);
+    ++result.discoveredVertices;
+
+    while (dfsSize) {
+      const Vertex vertex = decode(stack[dfsSize - 1]);
+      if (successorPosition[vertex] < graph.edgeEnd(vertex)) {
+        const Vertex destination =
+            graph.destination(successorPosition[vertex]++);
+        ++result.scannedEdges;
+        deadline.check(result.scannedEdges);
+        reportProgress("tarjan-zwick", result, start);
+
+        if (successorPosition[destination] == kUnvisited) {
+          pushDfs(destination);
+          highLink[destination] = static_cast<Vertex>(index--);
+          successorPosition[destination] =
+              graph.edgeBegin(destination);
+          ++result.discoveredVertices;
+        } else if (result.labels[destination] == kNoVertex &&
+                   highLink[vertex] < highLink[destination]) {
+          stack[dfsSize - 1] = vertex | kNonLead;
+          highLink[vertex] = highLink[destination];
+
+          if (highLink[vertex] == rootHighLink && index == 0) {
+            std::fill_n(result.labels.get(), vertexCount, Vertex{0});
+            result.components = 1;
+            result.largest = vertexCount;
+            result.assignedVertices = vertexCount;
+            dfsSize = 0;
+            componentSize = 0;
+            done = true;
+            break;
+          }
+        }
+        continue;
+      }
+
+      const bool isLead = (stack[dfsSize - 1] & kNonLead) == 0;
+      if (isLead) {
+        --dfsSize;
+        const uint64_t oldComponentSize = componentSize;
+        Vertex minimum = vertex;
+        while (componentSize) {
+          const Vertex top = componentTop();
+          if (highLink[vertex] < highLink[top]) break;
+          minimum = std::min(minimum, top);
+          --componentSize;
+          ++index;
+        }
+
+        const uint64_t first = vertexCount - oldComponentSize;
+        const uint64_t last = vertexCount - componentSize;
+        for (uint64_t position = first; position < last; ++position) {
+          result.labels[stack[position]] = minimum;
+        }
+        result.labels[vertex] = minimum;
+        ++index;
+
+        const uint64_t emittedSize =
+            1 + oldComponentSize - componentSize;
+        result.assignedVertices += emittedSize;
+        result.largest = std::max(result.largest, emittedSize);
+        ++result.components;
+      } else {
+        --dfsSize;
+        pushComponent(vertex);
+        if (dfsSize) {
+          const Vertex parent = decode(stack[dfsSize - 1]);
+          if (highLink[parent] < highLink[vertex]) {
+            stack[dfsSize - 1] = parent | kNonLead;
+            highLink[parent] = highLink[vertex];
+          }
+        }
+      }
+    }
+    if (done) break;
+  }
+
+  if (result.discoveredVertices != vertexCount ||
+      result.assignedVertices != vertexCount || dfsSize != 0 ||
+      componentSize != 0 || result.scannedEdges > graph.edgeCount()) {
+    throw std::runtime_error("Tarjan-Zwick coverage invariant failed");
+  }
+  return result;
+}
+
 template <class Graph>
 SccResult runAlgorithm(
     const Graph& graph,
@@ -520,7 +812,15 @@ SccResult runAlgorithm(
   if (algorithm == "gabow") {
     return runGabow(graph, limitSeconds);
   }
-  throw std::runtime_error("algorithm must be 'tarjan' or 'gabow'");
+  if (algorithm == "pearce") {
+    return runPearce(graph, limitSeconds);
+  }
+  if (algorithm == "tarjan-zwick") {
+    return runTarjanZwick(graph, limitSeconds);
+  }
+  throw std::runtime_error(
+      "algorithm must be 'tarjan', 'gabow', 'pearce', or "
+      "'tarjan-zwick'");
 }
 
 void writeExact(
@@ -608,6 +908,27 @@ MemoryGraph graphFromMask(unsigned vertices, uint64_t mask) {
   return graph;
 }
 
+MemoryGraph randomGraph(unsigned vertices, uint64_t& state) {
+  MemoryGraph graph;
+  graph.vertices = vertices;
+  graph.rowEnds.resize(vertices);
+  auto next = [&]() {
+    state ^= state << 13;
+    state ^= state >> 7;
+    state ^= state << 17;
+    return state;
+  };
+  for (unsigned source = 0; source < vertices; ++source) {
+    for (unsigned destination = 0; destination < vertices; ++destination) {
+      if ((next() & 3U) == 0) {
+        graph.destinations.push_back(destination);
+      }
+    }
+    graph.rowEnds[source] = graph.destinations.size();
+  }
+  return graph;
+}
+
 std::vector<Vertex> referenceLabels(const MemoryGraph& graph) {
   const size_t vertices = graph.vertexCount();
   std::vector<uint8_t> reachable(vertices * vertices, 0);
@@ -646,7 +967,8 @@ void assertLabels(
     const MemoryGraph& graph,
     const std::vector<Vertex>& expected,
     const char* context) {
-  for (const char* algorithm : {"tarjan", "gabow"}) {
+  for (const char* algorithm :
+       {"tarjan", "gabow", "pearce", "tarjan-zwick"}) {
     SccResult actual = runAlgorithm(graph, algorithm, 0);
     for (size_t vertex = 0; vertex < expected.size(); ++vertex) {
       if (actual.labels[vertex] != expected[vertex]) {
@@ -666,9 +988,28 @@ void runSelfTest() {
     ++cases;
   }
 
+  uint64_t randomState = 0x6a09e667f3bcc909ULL;
+  for (uint64_t test = 0; test < 2048; ++test) {
+    randomState ^= randomState << 13;
+    randomState ^= randomState >> 7;
+    randomState ^= randomState << 17;
+    const unsigned vertices = 5 + randomState % 12;
+    const MemoryGraph graph = randomGraph(vertices, randomState);
+    assertLabels(graph, referenceLabels(graph), "random graph oracle");
+    ++cases;
+  }
+
   {
     const MemoryGraph empty;
     assertLabels(empty, {}, "empty graph");
+    ++cases;
+  }
+  {
+    MemoryGraph duplicateEdges;
+    duplicateEdges.vertices = 3;
+    duplicateEdges.rowEnds = {2, 5, 6};
+    duplicateEdges.destinations = {1, 1, 0, 0, 2, 2};
+    assertLabels(duplicateEdges, {0, 0, 2}, "duplicate edges");
     ++cases;
   }
   {
@@ -709,8 +1050,9 @@ void runSelfTest() {
   }
 
   std::cout << "SELF_TEST_OK cases=" << cases
-            << " algorithms=tarjan,gabow"
+            << " algorithms=tarjan,gabow,pearce,tarjan-zwick"
             << " oracle=transitive_closure"
+            << " random_cases=2048"
             << " deep_vertices=" << kDeepVertices << '\n';
 }
 
@@ -728,7 +1070,8 @@ double parseLimit(const char* text) {
 void printUsage(const char* program) {
   std::cerr
       << "usage: " << program
-      << " INPUT.bgr tarjan|gabow [LABELS.bin|-] [SCC_SECONDS_LIMIT]\n"
+      << " INPUT.bgr tarjan|gabow|pearce|tarjan-zwick"
+      << " [LABELS.bin|-] [SCC_SECONDS_LIMIT]\n"
       << "       " << program << " --self-test\n";
 }
 
@@ -748,8 +1091,11 @@ int main(int argc, char** argv) {
 
     const std::string input = argv[1];
     const std::string algorithm = argv[2];
-    if (algorithm != "tarjan" && algorithm != "gabow") {
-      throw std::runtime_error("algorithm must be 'tarjan' or 'gabow'");
+    if (algorithm != "tarjan" && algorithm != "gabow" &&
+        algorithm != "pearce" && algorithm != "tarjan-zwick") {
+      throw std::runtime_error(
+          "algorithm must be 'tarjan', 'gabow', 'pearce', or "
+          "'tarjan-zwick'");
     }
     const std::string labelsPath = argc >= 4 ? argv[3] : "-";
     const double limitSeconds = argc == 5 ? parseLimit(argv[4]) : 0;

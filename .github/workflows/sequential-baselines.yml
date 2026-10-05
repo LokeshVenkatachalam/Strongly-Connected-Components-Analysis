@@ -19,9 +19,9 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
-      - name: Build and test iterative Tarjan and Gabow
+      - name: Build and test sequential SCC algorithms
         run: make -C algorithms/sequential-baselines check
-      - name: Run reconstructed baselines with ASan and UBSan
+      - name: Run sequential baselines with ASan and UBSan
         working-directory: algorithms/sequential-baselines
         run: |
           g++ -O1 -g -std=c++17 -Wall -Wextra -Wpedantic \

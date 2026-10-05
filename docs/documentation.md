@@ -96,9 +96,9 @@ make bin    # Build SCC binary
 
 ### Exact Sequential Baselines
 
-The repository includes outgoing-CSR-only, iterative Tarjan and Gabow
-implementations. They read checked BGR v2 directly, require one CPU thread, and
-do not build a transpose or use a GPU.
+The repository includes outgoing-CSR-only, iterative Tarjan, Gabow, Pearce,
+and Tarjan-Zwick implementations. They read checked BGR v2 directly, require
+one CPU thread, and do not build a transpose or use a GPU.
 
 ```bash
 # Build and run the exhaustive correctness tests
@@ -109,6 +109,10 @@ algorithms/sequential-baselines/scc_compare \
   graph.bgr tarjan tarjan.labels.bin 1800
 algorithms/sequential-baselines/scc_compare \
   graph.bgr gabow gabow.labels.bin 1800
+algorithms/sequential-baselines/scc_compare \
+  graph.bgr pearce pearce.labels.bin 1800
+algorithms/sequential-baselines/scc_compare \
+  graph.bgr tarjan-zwick tarjan-zwick.labels.bin 1800
 
 # Use '-' to skip label output
 algorithms/sequential-baselines/scc_compare graph.bgr tarjan -
@@ -118,8 +122,14 @@ algorithms/sequential-baselines/exact_scc graph.bgr
 ```
 
 The optional final argument is the SCC-phase time limit in seconds. Labels use
-the minimum vertex ID in each component, so Tarjan and Gabow outputs can be
-compared byte-for-byte.
+the minimum vertex ID in each component, so all four outputs can be compared
+byte-for-byte.
+
+The checked reader accepts 32/64-bit BGR edge offsets and weighted files,
+validates all row ends and destination IDs, and ignores weights. Edge counts
+remain 64-bit. Tarjan-Zwick supports up to `2^31 - 1` vertices because it uses
+the high vertex-ID bit as a stack flag; Pearce supports fewer than
+`2^32 - 2`; all current PHEM graphs are below `2^30`.
 
 See the
 [source and provenance notes](https://github.com/LokeshVenkatachalam/Strongly-Connected-Components-Analysis/tree/main/algorithms/sequential-baselines)

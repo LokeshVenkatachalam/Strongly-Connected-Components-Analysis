@@ -80,7 +80,7 @@ def parse_prefixed_json(output: str, prefix: str):
 
 def check_comparison(binary: str, graph: pathlib.Path, directory: pathlib.Path):
     label_files = []
-    for algorithm in ("tarjan", "gabow"):
+    for algorithm in ("tarjan", "gabow", "pearce", "tarjan-zwick"):
         labels = directory / f"{graph.stem}.{algorithm}.labels.bin"
         completed = run([binary, str(graph), algorithm, str(labels), "60"])
         record = parse_prefixed_json(completed.stdout, "SCC_RESULT ")
@@ -89,7 +89,10 @@ def check_comparison(binary: str, graph: pathlib.Path, directory: pathlib.Path):
         assert record["edges"] == sum(map(len, ROWS))
         assert record["components"] == EXPECTED_COMPONENTS
         assert record["largest"] == EXPECTED_LARGEST
-        assert record["scanned_edges"] == sum(map(len, ROWS))
+        if algorithm == "pearce":
+            assert record["scanned_edges"] == 2 * sum(map(len, ROWS))
+        else:
+            assert 0 < record["scanned_edges"] <= sum(map(len, ROWS))
         actual = list(struct.unpack("<" + "I" * len(ROWS), labels.read_bytes()))
         assert actual == EXPECTED_LABELS
         label_files.append(labels)
@@ -160,7 +163,8 @@ def main() -> None:
 
     print(
         "BGR_CLI_TEST_OK "
-        "formats=8 algorithms=tarjan,gabow invalid_endpoint=checked"
+        "formats=8 algorithms=tarjan,gabow,pearce,tarjan-zwick "
+        "invalid_endpoint=checked"
     )
 
 

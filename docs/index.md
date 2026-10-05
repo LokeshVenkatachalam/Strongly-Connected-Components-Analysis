@@ -30,7 +30,7 @@ Benchmarking parallel Strongly Connected Components algorithms on graphs with up
 Win count = number of graphs (out of 36) where the algorithm achieved the fastest time at its best thread count.
 
 For single-thread correctness and timing comparisons, the repository also
-includes [exact iterative Tarjan and Gabow baselines]({{ site.baseurl }}/documentation/#exact-sequential-baselines).
+includes [exact iterative Tarjan, Gabow, Pearce, and Tarjan-Zwick baselines]({{ site.baseurl }}/documentation/#exact-sequential-baselines).
 
 ---
 
@@ -105,6 +105,8 @@ PARLAY_NUM_THREADS=128 ./algorithms/wang-etal/src/scc \
 make -C algorithms/sequential-baselines check
 ./algorithms/sequential-baselines/scc_compare graph.bgr tarjan -
 ./algorithms/sequential-baselines/scc_compare graph.bgr gabow -
+./algorithms/sequential-baselines/scc_compare graph.bgr pearce -
+./algorithms/sequential-baselines/scc_compare graph.bgr tarjan-zwick -
 ```
 
 See [Documentation]({{ site.baseurl }}/documentation/) for full build instructions.
@@ -120,7 +122,7 @@ algorithms/
   ispan/         ← SC 2018
   par-scc/       ← SC 2013 (modified: GM_EDGE64)
   sequential-baselines/
-                  ← exact iterative Tarjan and Gabow
+                  ← four exact iterative CPU algorithms
 tools/
   bgr2scc.cpp    ← BGR → algorithm format converter
   scc_analyzer.cpp, run scripts, gen_report.py
