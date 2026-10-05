@@ -609,6 +609,28 @@ This second campaign used a different, fully checked out-of-core execution
 path. In particular, its uk-2014 result is not directly comparable with the
 203.094336-second matched in-memory experiment above.
 
+### ClueWeb load-once comparison on Node 10
+
+Job `41893` mapped and validated the source-verified ClueWeb BGR once, then ran
+all four modular implementations in one process. The job used an AMD EPYC 7742
+CPU, 64 GB requested memory, eight memory-derived allocated CPUs, and no GPU.
+The BGR validation used all eight CPUs; every SCC phase remained
+single-threaded.
+
+| Algorithm | SCC time | Edge inspections | SCCs | Largest SCC |
+|:----------|---------:|-----------------:|-----:|------------:|
+| **Tarjan** | **531.541 s (8m 51.541s)** | 42,574,107,469 | 135,223,661 | 774,373,029 |
+| Gabow | 542.784 s (9m 02.784s) | 42,574,107,469 | 135,223,661 | 774,373,029 |
+| Tarjan-Zwick | 717.906 s (11m 57.906s) | 42,574,107,469 | 135,223,661 | 774,373,029 |
+| Pearce | 850.844 s (14m 10.844s) | 85,148,214,938 | 135,223,661 | 774,373,029 |
+
+Shared validation/load took **30.175 seconds**. The four SCC phases totaled
+**2,643.075 seconds**, and the complete process took **2,674.779 seconds
+(44m 34.779s)**. Slurm elapsed time was 44m 50s, charging 5.978 allocated
+CPU-hours; actual summed CPU execution was 0.780 CPU-hours. Label files were
+not written, but all four runs independently reported the same component count
+and largest-component size.
+
 > **Reproducibility note:** The source that produced the matched 2026-09-13
 > Tarjan/Gabow timings was untracked and later deleted. Its verified binary and
 > source hashes survive. The modular Tarjan/Gabow sources are tested
@@ -618,4 +640,5 @@ path. In particular, its uk-2014 result is not directly comparable with the
 
 See the [sequential source and provenance](../algorithms/sequential-baselines/),
 the [matched Tarjan/Gabow CSV](sequential_scc_historical.csv), and the
-[exact Tarjan CSV](exact_tarjan_l40s.csv).
+[ClueWeb load-once CSV](sequential_scc_clueweb_node10.csv), and the [exact
+Tarjan CSV](exact_tarjan_l40s.csv).

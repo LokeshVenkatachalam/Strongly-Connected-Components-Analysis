@@ -164,6 +164,7 @@ std::string jsonAlgorithmList(
 }  // namespace
 
 int main(int argc, char** argv) {
+  std::cout << std::unitbuf;
   const auto processStart = scc::Clock::now();
   try {
     const Options options = parseOptions(argc, argv);

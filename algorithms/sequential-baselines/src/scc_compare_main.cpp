@@ -31,6 +31,7 @@ void printUsage(const char* program) {
 }  // namespace
 
 int main(int argc, char** argv) {
+  std::cout << std::unitbuf;
   const auto processStart = scc::Clock::now();
   try {
     if (argc < 3 || argc > 5) {
