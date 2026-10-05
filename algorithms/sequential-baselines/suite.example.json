@@ -11,6 +11,7 @@
   ],
   "binary": "./scc_benchmark",
   "time_limit_seconds": 1800,
+  "validation_threads": 1,
   "labels_dir": null,
   "results_dir": "./suite-results",
   "report_progress": true

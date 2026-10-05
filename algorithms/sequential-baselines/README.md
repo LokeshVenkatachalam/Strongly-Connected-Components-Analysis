@@ -78,6 +78,7 @@ discover components in different orders.
 ```bash
 algorithms/sequential-baselines/scc_benchmark graph.bgr \
   --algorithms tarjan,gabow,pearce,tarjan-zwick \
+  --validation-threads 8 \
   --time-limit 1800 \
   --labels-dir labels/graph
 ```
@@ -91,6 +92,11 @@ The benchmark executable:
 5. optionally writes canonical labels;
 6. emits one `BGR_LOAD`, one `SCC_RESULT` per algorithm, and one
    `BENCHMARK_RESULT` JSON record.
+
+`--validation-threads` parallelizes only the shared row/end-point validation
+pass. Every SCC implementation remains single-threaded, preserving the
+sequential comparison boundary. This uses CPUs that Slurm may allocate because
+of the job's memory request instead of leaving them idle.
 
 All current algorithms need only outgoing CSR, so no transpose is constructed.
 Preprocessing is intentionally dependency-driven rather than paying for an

@@ -110,7 +110,7 @@ make -C algorithms/sequential-baselines check
 
 # Or map/validate once and run all four
 ./algorithms/sequential-baselines/scc_benchmark graph.bgr \
-  --algorithms all
+  --algorithms all --validation-threads 8
 ```
 
 See [Documentation]({{ site.baseurl }}/documentation/) for full build instructions.

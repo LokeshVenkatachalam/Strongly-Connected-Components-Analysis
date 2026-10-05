@@ -3,6 +3,7 @@ AR ?= ar
 
 CPPFLAGS ?= -Iinclude
 CXXFLAGS ?= -O3 -std=c++17 -Wall -Wextra -Wpedantic
+THREAD_FLAGS ?= -pthread
 ARFLAGS := rcs
 
 BUILD_DIR := build
@@ -32,22 +33,22 @@ all: scc_compare scc_benchmark exact_scc
 
 $(BUILD_DIR)/%.o: %.cpp
 	@mkdir -p $(dir $@)
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -MMD -MP -c $< -o $@
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(THREAD_FLAGS) -MMD -MP -c $< -o $@
 
 $(BUILD_DIR)/libscc.a: $(LIB_OBJECTS)
 	$(AR) $(ARFLAGS) $@ $^
 
 scc_compare: $(COMPARE_OBJECT) $(BUILD_DIR)/libscc.a
-	$(CXX) $(CXXFLAGS) $^ -o $@
+	$(CXX) $(CXXFLAGS) $(THREAD_FLAGS) $^ -o $@
 
 scc_benchmark: $(BENCHMARK_OBJECT) $(BUILD_DIR)/libscc.a
-	$(CXX) $(CXXFLAGS) $^ -o $@
+	$(CXX) $(CXXFLAGS) $(THREAD_FLAGS) $^ -o $@
 
 scc_self_test: $(TEST_OBJECT) $(BUILD_DIR)/libscc.a
-	$(CXX) $(CXXFLAGS) $^ -o $@
+	$(CXX) $(CXXFLAGS) $(THREAD_FLAGS) $^ -o $@
 
 exact_scc: exact_scc.cpp
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $< -o $@
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(THREAD_FLAGS) $< -o $@
 
 check: all scc_self_test
 	./scc_self_test

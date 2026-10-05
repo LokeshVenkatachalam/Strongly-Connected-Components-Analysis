@@ -81,7 +81,7 @@ class BgrGraph {
   BgrGraph& operator=(BgrGraph&&) noexcept;
 
   GraphView view() const;
-  void validate() const;
+  void validate(unsigned threads = 1) const;
   void prepareForScc() const;
   void assertUnchanged() const;
 

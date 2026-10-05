@@ -47,7 +47,7 @@ int main(int argc, char** argv) {
 
     const auto loadStart = scc::Clock::now();
     scc::BgrGraph graph(input);
-    graph.validate();
+    graph.validate(1);
     graph.assertUnchanged();
     const double loadSeconds = scc::elapsedSeconds(loadStart);
 

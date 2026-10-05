@@ -1,17 +1,67 @@
 #include "scc/graph.hpp"
 
+#include <algorithm>
+#include <atomic>
 #include <cerrno>
 #include <cstdint>
 #include <cstring>
+#include <exception>
 #include <fcntl.h>
 #include <limits>
+#include <mutex>
 #include <stdexcept>
 #include <sys/mman.h>
 #include <sys/stat.h>
+#include <thread>
 #include <unistd.h>
 #include <utility>
+#include <vector>
 
 namespace scc {
+namespace {
+
+template <class Function>
+void parallelRanges(
+    std::uint64_t size, unsigned requestedThreads, Function function) {
+  if (requestedThreads == 0) {
+    throw std::runtime_error(
+        "BGR validation thread count must be positive");
+  }
+  if (size == 0) return;
+
+  const unsigned threads = static_cast<unsigned>(
+      std::min<std::uint64_t>(requestedThreads, size));
+  std::atomic<bool> failed{false};
+  std::exception_ptr failure;
+  std::mutex failureMutex;
+
+  auto worker = [&](unsigned index) {
+    const std::uint64_t quotient = size / threads;
+    const std::uint64_t remainder = size % threads;
+    const std::uint64_t first =
+        quotient * index + std::min<std::uint64_t>(index, remainder);
+    const std::uint64_t last =
+        first + quotient + (index < remainder ? 1 : 0);
+    try {
+      function(first, last, failed);
+    } catch (...) {
+      failed.store(true, std::memory_order_relaxed);
+      std::lock_guard<std::mutex> lock(failureMutex);
+      if (!failure) failure = std::current_exception();
+    }
+  };
+
+  std::vector<std::thread> workers;
+  workers.reserve(threads > 0 ? threads - 1 : 0);
+  for (unsigned index = 1; index < threads; ++index) {
+    workers.emplace_back(worker, index);
+  }
+  worker(0);
+  for (auto& thread : workers) thread.join();
+  if (failure) std::rethrow_exception(failure);
+}
+
+}  // namespace
 
 struct BgrGraph::Impl {
   explicit Impl(std::string inputPath) : path(std::move(inputPath)) {
@@ -142,28 +192,49 @@ BgrGraph& BgrGraph::operator=(BgrGraph&&) noexcept = default;
 
 GraphView BgrGraph::view() const { return impl_->view(); }
 
-void BgrGraph::validate() const {
+void BgrGraph::validate(unsigned threads) const {
   impl_->advise(MADV_SEQUENTIAL);
   const GraphView graph = view();
-  EdgeIndex previous = 0;
-  for (std::uint64_t vertex = 0;
-       vertex < graph.vertexCount(); ++vertex) {
-    const EdgeIndex end =
-        graph.edgeEnd(static_cast<Vertex>(vertex));
-    if (end < previous || end > graph.edgeCount()) {
-      throw std::runtime_error(
-          "invalid cumulative row end at vertex " +
-          std::to_string(vertex));
-    }
-    previous = end;
-  }
-  if (previous != graph.edgeCount()) {
+  parallelRanges(
+      graph.vertexCount(),
+      threads,
+      [&](std::uint64_t first,
+          std::uint64_t last,
+          const std::atomic<bool>& failed) {
+        EdgeIndex previous =
+            first
+                ? graph.edgeEnd(static_cast<Vertex>(first - 1))
+                : 0;
+        for (std::uint64_t vertex = first; vertex < last; ++vertex) {
+          if (failed.load(std::memory_order_relaxed)) return;
+          const EdgeIndex end =
+              graph.edgeEnd(static_cast<Vertex>(vertex));
+          if (end < previous || end > graph.edgeCount()) {
+            throw std::runtime_error(
+                "invalid cumulative row end at vertex " +
+                std::to_string(vertex));
+          }
+          previous = end;
+        }
+      });
+  if (graph.vertexCount() &&
+      graph.edgeEnd(
+          static_cast<Vertex>(graph.vertexCount() - 1)) !=
+          graph.edgeCount()) {
     throw std::runtime_error(
         "final BGR row end differs from edge count");
   }
-  for (EdgeIndex edge = 0; edge < graph.edgeCount(); ++edge) {
-    (void)graph.destination(edge);
-  }
+  parallelRanges(
+      graph.edgeCount(),
+      threads,
+      [&](std::uint64_t first,
+          std::uint64_t last,
+          const std::atomic<bool>& failed) {
+        for (EdgeIndex edge = first; edge < last; ++edge) {
+          if (failed.load(std::memory_order_relaxed)) return;
+          (void)graph.destination(edge);
+        }
+      });
 }
 
 void BgrGraph::prepareForScc() const { impl_->advise(MADV_RANDOM); }

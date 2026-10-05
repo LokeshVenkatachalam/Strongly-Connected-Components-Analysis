@@ -22,6 +22,7 @@ struct Options {
   std::vector<std::string> algorithms;
   std::string labelsDirectory;
   double timeLimitSeconds = 0;
+  unsigned validationThreads = 1;
   bool reportProgress = true;
 };
 
@@ -42,6 +43,16 @@ std::vector<std::string> splitAlgorithms(const std::string& value) {
       names.emplace_back(algorithm.name);
     }
     return names;
+  }
+
+  unsigned parseThreads(const std::string& value) {
+    std::size_t consumed = 0;
+    const unsigned long threads = std::stoul(value, &consumed);
+    if (consumed != value.size() || threads == 0 || threads > 256) {
+      throw std::runtime_error(
+          "--validation-threads must be in the range 1..256");
+    }
+    return static_cast<unsigned>(threads);
   }
 
   std::vector<std::string> names;
@@ -73,7 +84,7 @@ void printUsage(const char* program) {
       << "usage: " << program
       << " INPUT.bgr [--algorithms LIST|all]"
       << " [--labels-dir DIR] [--time-limit SECONDS]"
-      << " [--no-progress]\n"
+      << " [--validation-threads N] [--no-progress]\n"
       << "       " << program << " --list-algorithms\n";
 }
 
@@ -106,6 +117,8 @@ Options parseOptions(int argc, char** argv) {
       options.labelsDirectory = requireValue();
     } else if (argument == "--time-limit") {
       options.timeLimitSeconds = parseLimit(requireValue());
+    } else if (argument == "--validation-threads") {
+      options.validationThreads = parseThreads(requireValue());
     } else if (argument == "--no-progress") {
       options.reportProgress = false;
     } else {
@@ -157,7 +170,7 @@ int main(int argc, char** argv) {
 
     const auto loadStart = scc::Clock::now();
     scc::BgrGraph graph(options.input);
-    graph.validate();
+    graph.validate(options.validationThreads);
     graph.assertUnchanged();
     const double loadSeconds = scc::elapsedSeconds(loadStart);
     const scc::GraphView view = graph.view();
@@ -172,6 +185,8 @@ int main(int argc, char** argv) {
               << "\"weighted\":"
               << (graph.weighted() ? "true" : "false") << ","
               << "\"load_seconds\":" << loadSeconds << ","
+              << "\"validation_threads\":"
+              << options.validationThreads << ","
               << "\"algorithms\":"
               << jsonAlgorithmList(options.algorithms)
               << "}\n";

@@ -116,6 +116,8 @@ def check_benchmark(
             str(labels_directory),
             "--time-limit",
             "60",
+            "--validation-threads",
+            "2",
             "--no-progress",
         ]
     )

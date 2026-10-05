@@ -112,7 +112,8 @@ algorithms/sequential-baselines/scc_compare graph.bgr tarjan-zwick -
 
 # Map and validate once, then run a selected ordered subset
 algorithms/sequential-baselines/scc_benchmark graph.bgr \
-  --algorithms tarjan,gabow,pearce,tarjan-zwick
+  --algorithms tarjan,gabow,pearce,tarjan-zwick \
+  --validation-threads 8
 
 # Run editable graph/algorithm selections
 cp algorithms/sequential-baselines/suite.example.json suite.json

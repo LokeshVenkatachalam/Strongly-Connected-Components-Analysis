@@ -121,6 +121,11 @@ def parse_args():
         help="per-algorithm SCC-phase limit in seconds",
     )
     parser.add_argument(
+        "--validation-threads",
+        type=int,
+        help="threads used only for the shared BGR validation pass",
+    )
+    parser.add_argument(
         "--build",
         action="store_true",
         help="build scc_benchmark before running",
@@ -189,6 +194,13 @@ def main():
     )
     if time_limit < 0:
         raise ValueError("time limit must be non-negative")
+    validation_threads = (
+        args.validation_threads
+        if args.validation_threads is not None
+        else int(config.get("validation_threads", 1))
+    )
+    if not 1 <= validation_threads <= 256:
+        raise ValueError("validation_threads must be in the range 1..256")
 
     if args.build:
         subprocess.run(
@@ -208,6 +220,7 @@ def main():
                 "algorithms": algorithms,
                 "binary": str(binary),
                 "time_limit_seconds": time_limit,
+                "validation_threads": validation_threads,
                 "labels_dir": (
                     str(labels_directory)
                     if labels_directory is not None
@@ -229,6 +242,8 @@ def main():
             ",".join(algorithms),
             "--time-limit",
             str(time_limit),
+            "--validation-threads",
+            str(validation_threads),
         ]
         if args.no_progress or config.get("report_progress") is False:
             command.append("--no-progress")

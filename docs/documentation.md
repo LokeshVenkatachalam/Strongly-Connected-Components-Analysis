@@ -136,6 +136,7 @@ the high vertex-ID bit as a stack flag; Pearce supports fewer than
 ```bash
 algorithms/sequential-baselines/scc_benchmark graph.bgr \
   --algorithms tarjan,gabow,pearce,tarjan-zwick \
+  --validation-threads 8 \
   --time-limit 1800 \
   --labels-dir labels/graph
 ```
@@ -143,7 +144,8 @@ algorithms/sequential-baselines/scc_benchmark graph.bgr \
 The graph is mapped and fully validated once. Each algorithm receives the same
 read-only graph view and allocates an independent workspace that is released
 before the next run. Current algorithms are outgoing-only, so the runner skips
-transpose construction.
+transpose construction. Validation can use all CPUs assigned because of the
+memory request; the four SCC kernels remain single-threaded.
 
 For an editable graph/algorithm campaign:
 
