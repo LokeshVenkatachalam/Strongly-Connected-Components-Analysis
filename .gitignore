@@ -7,6 +7,11 @@
 __pycache__/
 *.py[cod]
 /algorithms/sequential-baselines/scc_compare
+/algorithms/sequential-baselines/scc_benchmark
+/algorithms/sequential-baselines/scc_self_test
 /algorithms/sequential-baselines/exact_scc
+/algorithms/sequential-baselines/build/
+/algorithms/sequential-baselines/build-zig/
+/algorithms/sequential-baselines/suite-results/
 *.labels.bin
 *.partial.*

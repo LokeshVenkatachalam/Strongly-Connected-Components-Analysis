@@ -1,0 +1,17 @@
+{
+  "graph_dir": "/path/to/bgr",
+  "graphs": [
+    "sk-2005"
+  ],
+  "algorithms": [
+    "tarjan",
+    "gabow",
+    "pearce",
+    "tarjan-zwick"
+  ],
+  "binary": "./scc_benchmark",
+  "time_limit_seconds": 1800,
+  "labels_dir": null,
+  "results_dir": "./suite-results",
+  "report_progress": true
+}

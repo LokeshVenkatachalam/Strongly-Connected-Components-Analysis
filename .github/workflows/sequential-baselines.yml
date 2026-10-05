@@ -24,11 +24,13 @@ jobs:
       - name: Run sequential baselines with ASan and UBSan
         working-directory: algorithms/sequential-baselines
         run: |
-          g++ -O1 -g -std=c++17 -Wall -Wextra -Wpedantic \
-            -fsanitize=address,undefined \
-            scc_compare.cpp -o /tmp/scc_compare-sanitize
+          make clean
+          make \
+            CXXFLAGS="-O1 -g -std=c++17 -Wall -Wextra -Wpedantic -fsanitize=address,undefined" \
+            all scc_self_test
           ASAN_OPTIONS=detect_leaks=1 \
-            /tmp/scc_compare-sanitize --self-test
+            ./scc_self_test
+          ./exact_scc --arithmetic-test
           ASAN_OPTIONS=detect_leaks=1 \
             python3 tests/test_bgr_cli.py \
-              /tmp/scc_compare-sanitize ./exact_scc
+              ./scc_compare ./scc_benchmark ./exact_scc

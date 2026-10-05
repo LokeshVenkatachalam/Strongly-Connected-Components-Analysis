@@ -131,6 +131,32 @@ remain 64-bit. Tarjan-Zwick supports up to `2^31 - 1` vertices because it uses
 the high vertex-ID bit as a stack flag; Pearce supports fewer than
 `2^32 - 2`; all current PHEM graphs are below `2^30`.
 
+#### Load once, run several algorithms
+
+```bash
+algorithms/sequential-baselines/scc_benchmark graph.bgr \
+  --algorithms tarjan,gabow,pearce,tarjan-zwick \
+  --time-limit 1800 \
+  --labels-dir labels/graph
+```
+
+The graph is mapped and fully validated once. Each algorithm receives the same
+read-only graph view and allocates an independent workspace that is released
+before the next run. Current algorithms are outgoing-only, so the runner skips
+transpose construction.
+
+For an editable graph/algorithm campaign:
+
+```bash
+cp algorithms/sequential-baselines/suite.example.json suite.json
+# Edit graph_dir, graphs, and algorithms.
+python3 algorithms/sequential-baselines/run_suite.py \
+  --config suite.json --build
+```
+
+The implementation is a reusable static library with one source file per
+algorithm under `src/` and public headers under `include/scc/`.
+
 See the
 [source and provenance notes](https://github.com/LokeshVenkatachalam/Strongly-Connected-Components-Analysis/tree/main/algorithms/sequential-baselines)
 and the [measured sequential runtimes]({{ site.baseurl }}/results/#8-exact-sequential-baselines-tarjan-and-gabow).

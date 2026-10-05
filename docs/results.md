@@ -589,8 +589,8 @@ path. In particular, its uk-2014 result is not directly comparable with the
 {: .warning }
 > The source that produced the matched 2026-09-13 Tarjan/Gabow timings was
 > untracked and later deleted. Its verified binary and source hashes survive.
-> `scc_compare.cpp` is a tested reconstruction, not a claim that the deleted
-> source was recovered. The historical rows remain attributed to binary
+> The modular Tarjan/Gabow sources are tested reconstructions, not a claim that
+> the deleted source was recovered. The historical rows remain attributed to binary
 > `9f83aba74bb9a9d528f26204300e70b195da562442968c1be03f4321ad8aed7d`.
 
 See the

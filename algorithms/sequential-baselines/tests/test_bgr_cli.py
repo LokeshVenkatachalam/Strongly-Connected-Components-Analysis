@@ -100,6 +100,56 @@ def check_comparison(binary: str, graph: pathlib.Path, directory: pathlib.Path):
     assert label_files[0].read_bytes() == label_files[1].read_bytes()
 
 
+def check_benchmark(
+    binary: str,
+    graph: pathlib.Path,
+    directory: pathlib.Path,
+):
+    labels_directory = directory / "benchmark-labels"
+    completed = run(
+        [
+            binary,
+            str(graph),
+            "--algorithms",
+            "tarjan,gabow,pearce,tarjan-zwick",
+            "--labels-dir",
+            str(labels_directory),
+            "--time-limit",
+            "60",
+            "--no-progress",
+        ]
+    )
+    load_records = [
+        line for line in completed.stdout.splitlines()
+        if line.startswith("BGR_LOAD ")
+    ]
+    result_records = [
+        json.loads(line[len("SCC_RESULT ") :])
+        for line in completed.stdout.splitlines()
+        if line.startswith("SCC_RESULT ")
+    ]
+    summaries = [
+        line for line in completed.stdout.splitlines()
+        if line.startswith("BENCHMARK_RESULT ")
+    ]
+    assert len(load_records) == 1
+    assert len(result_records) == 4
+    assert len(summaries) == 1
+    assert [record["algorithm"] for record in result_records] == [
+        "tarjan",
+        "gabow",
+        "pearce",
+        "tarjan-zwick",
+    ]
+    expected_bytes = struct.pack(
+        "<" + "I" * len(EXPECTED_LABELS), *EXPECTED_LABELS
+    )
+    for record in result_records:
+        assert record["components"] == EXPECTED_COMPONENTS
+        assert record["largest"] == EXPECTED_LARGEST
+        assert pathlib.Path(record["labels"]).read_bytes() == expected_bytes
+
+
 def check_exact(binary: str, graph: pathlib.Path):
     completed = run([binary, str(graph)])
     records = [
@@ -143,12 +193,13 @@ def check_invalid_endpoint(
 
 
 def main() -> None:
-    if len(sys.argv) != 3:
+    if len(sys.argv) != 4:
         raise SystemExit(
-            "usage: test_bgr_cli.py SCC_COMPARE EXACT_SCC"
+            "usage: test_bgr_cli.py SCC_COMPARE SCC_BENCHMARK EXACT_SCC"
         )
     comparison_binary = str(pathlib.Path(sys.argv[1]).resolve())
-    exact_binary = str(pathlib.Path(sys.argv[2]).resolve())
+    benchmark_binary = str(pathlib.Path(sys.argv[2]).resolve())
+    exact_binary = str(pathlib.Path(sys.argv[3]).resolve())
 
     with tempfile.TemporaryDirectory(prefix="scc-bgr-test-") as temporary:
         directory = pathlib.Path(temporary)
@@ -157,6 +208,9 @@ def main() -> None:
             write_bgr(graph, flags)
             check_comparison(comparison_binary, graph, directory)
             check_exact(exact_binary, graph)
+        check_benchmark(
+            benchmark_binary, directory / "fixture-0.bgr", directory
+        )
         check_invalid_endpoint(
             comparison_binary, exact_binary, directory
         )

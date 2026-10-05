@@ -107,6 +107,10 @@ make -C algorithms/sequential-baselines check
 ./algorithms/sequential-baselines/scc_compare graph.bgr gabow -
 ./algorithms/sequential-baselines/scc_compare graph.bgr pearce -
 ./algorithms/sequential-baselines/scc_compare graph.bgr tarjan-zwick -
+
+# Or map/validate once and run all four
+./algorithms/sequential-baselines/scc_benchmark graph.bgr \
+  --algorithms all
 ```
 
 See [Documentation]({{ site.baseurl }}/documentation/) for full build instructions.
@@ -122,7 +126,7 @@ algorithms/
   ispan/         ← SC 2018
   par-scc/       ← SC 2013 (modified: GM_EDGE64)
   sequential-baselines/
-                  ← four exact iterative CPU algorithms
+                  ← modular exact CPU library and suite runner
 tools/
   bgr2scc.cpp    ← BGR → algorithm format converter
   scc_analyzer.cpp, run scripts, gen_report.py

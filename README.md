@@ -40,8 +40,11 @@ Wang et al. (2023) dominates, winning 23 of 36 graphs:
 │   ├── ispan/            # iSpan SC 2018
 │   ├── par-scc/          # par-scc SC 2013 (modified for GM_EDGE64)
 │   └── sequential-baselines/
-│       ├── exact_scc.cpp   # Recovered exact iterative Tarjan analyzer
-│       └── scc_compare.cpp # Four exact iterative sequential algorithms
+│       ├── include/scc/     # Reusable public C++ API
+│       ├── src/             # One translation unit per algorithm
+│       ├── exact_scc.cpp    # Recovered exact iterative Tarjan analyzer
+│       ├── run_suite.py     # Editable multi-graph suite launcher
+│       └── suite.example.json
 ├── tools/                # BGR-based benchmark tooling
 │   ├── scc_analyzer.cpp  # par-scc analyzer with BGR loading
 │   ├── bgr2scc.cpp       # BGR → algorithm format converter
@@ -106,6 +109,16 @@ algorithms/sequential-baselines/scc_compare graph.bgr tarjan -
 algorithms/sequential-baselines/scc_compare graph.bgr gabow -
 algorithms/sequential-baselines/scc_compare graph.bgr pearce -
 algorithms/sequential-baselines/scc_compare graph.bgr tarjan-zwick -
+
+# Map and validate once, then run a selected ordered subset
+algorithms/sequential-baselines/scc_benchmark graph.bgr \
+  --algorithms tarjan,gabow,pearce,tarjan-zwick
+
+# Run editable graph/algorithm selections
+cp algorithms/sequential-baselines/suite.example.json suite.json
+# Edit graph_dir, graphs, and algorithms in suite.json.
+python3 algorithms/sequential-baselines/run_suite.py \
+  --config suite.json --build
 ```
 
 ### Run Full Benchmark

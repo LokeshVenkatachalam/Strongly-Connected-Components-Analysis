@@ -9,9 +9,16 @@ requires a GPU.
 - `exact_scc.cpp` is the byte-for-byte recovered exact Tarjan analyzer from the
   L40S worktree. It validates BGR v2 input, computes SCCs iteratively, and
   performs additional reachability and condensation checks.
-- `scc_compare.cpp` provides iterative Tarjan, Gabow, Pearce, and
-  Tarjan-Zwick SCC algorithms, canonical labels, checked BGR v2 input,
-  optional atomic label-file output, progress records, and a time limit.
+- `src/tarjan.cpp`, `src/gabow.cpp`, `src/pearce.cpp`, and
+  `src/tarjan_zwick.cpp` are independently compiled algorithm
+  implementations.
+- `include/scc/` contains the public graph, algorithm, result, and I/O APIs.
+- `src/graph.cpp` owns checked, read-only BGR mapping and validation.
+- `scc_compare` runs one selected algorithm for backward compatibility.
+- `scc_benchmark` maps and validates one graph once, then runs any ordered
+  subset of the four algorithms against that same mapping.
+- `run_suite.py` selects graphs and algorithms from command-line options or an
+  editable JSON configuration.
 - `SCIPY_LICENSE.txt` contains the BSD 3-Clause license covering the SciPy
   Pearce and Tarjan-Zwick implementations from which the C++ ports were
   adapted.
@@ -24,6 +31,10 @@ transpose.
 ```bash
 make -C algorithms/sequential-baselines check
 ```
+
+The Makefile builds each implementation into its own object file, archives the
+objects as `build/libscc.a`, and links separate CLI, benchmark, and self-test
+executables. Header dependencies are tracked automatically.
 
 The test target:
 
@@ -61,6 +72,49 @@ algorithms/sequential-baselines/exact_scc graph.bgr
 Each comparison label is the minimum vertex ID in that vertex's SCC. Therefore
 all four outputs can be compared byte-for-byte even though the algorithms
 discover components in different orders.
+
+## Load once and run a selected suite
+
+```bash
+algorithms/sequential-baselines/scc_benchmark graph.bgr \
+  --algorithms tarjan,gabow,pearce,tarjan-zwick \
+  --time-limit 1800 \
+  --labels-dir labels/graph
+```
+
+The benchmark executable:
+
+1. opens, maps, and validates the BGR once;
+2. retains that read-only mapping for the complete process;
+3. runs algorithms in the requested order with independent workspaces;
+4. frees each workspace before starting the next algorithm;
+5. optionally writes canonical labels;
+6. emits one `BGR_LOAD`, one `SCC_RESULT` per algorithm, and one
+   `BENCHMARK_RESULT` JSON record.
+
+All current algorithms need only outgoing CSR, so no transpose is constructed.
+Preprocessing is intentionally dependency-driven rather than paying for an
+unused transpose. A future algorithm that requires reverse CSR should add a
+shared preprocessor and mark that requirement in the algorithm registry.
+
+For multiple editable graphs:
+
+```bash
+cp algorithms/sequential-baselines/suite.example.json suite.json
+# Edit graph_dir, graphs, and algorithms in suite.json.
+python3 algorithms/sequential-baselines/run_suite.py \
+  --config suite.json --build
+
+# A positional graph name overrides the config graph list.
+python3 algorithms/sequential-baselines/run_suite.py clueweb12 \
+  --graph-dir /scratch/lokesh.v/phem-graphs/all-bgr \
+  --algorithms tarjan-zwick,pearce
+```
+
+`run_suite.py` starts one `scc_benchmark` process per graph, so every selected
+algorithm for that graph shares one BGR mapping and one validation pass. It
+writes a separate combined log for each graph and fails explicitly on the first
+unsuccessful run.
 
 ## BGR and execution boundaries
 
@@ -143,10 +197,10 @@ records these original hashes:
 | `run.py` | `716d59a984eb6899346ddd3fb6bc7d4ab271dd048e33961f086b7bea90d680cd` |
 | `scc_compare` binary | `9f83aba74bb9a9d528f26204300e70b195da562442968c1be03f4321ad8aed7d` |
 
-The Tarjan/Gabow portions of `scc_compare.cpp` are a new, independently tested
-reconstruction. Their behavior matches the preserved interface and
-canonical-label contract, but their source hash is intentionally not presented
-as the deleted implementation. Historical SK-2005 and UK-2014 timings in
+`src/tarjan.cpp` and `src/gabow.cpp` are new, independently tested
+reconstructions. Their behavior matches the preserved interface and
+canonical-label contract, but their source hashes are intentionally not
+presented as the deleted implementation. Historical SK-2005 and UK-2014 timings in
 `results/sequential_scc_historical.csv` belong to the preserved binary hash
 above and must not be attributed to the reconstruction without rerunning them.
 
