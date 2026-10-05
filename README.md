@@ -1,6 +1,6 @@
 # Strongly Connected Components Analysis
 
-Comprehensive benchmark and analysis of parallel SCC algorithms on large-scale graphs (up to 92 billion edges), using the [BGR binary graph format](https://github.com/hpc-heterogeneous-graph-algorithms/graph-format-converters) for high-performance I/O.
+Comprehensive benchmark and analysis of parallel SCC algorithms on large-scale graphs (up to 92 billion edges), using the [BGR binary graph format](https://github.com/hpc-heterogeneous-graph-algorithms/graph-format-converters) for high-performance I/O. The repository also preserves exact, iterative Tarjan and Gabow CPU baselines.
 
 ## Overview
 
@@ -12,6 +12,10 @@ This repository benchmarks **4 parallel SCC algorithms** across **36 graphs** at
 | [GBBS](algorithms/gbbs/) | Theoretically Efficient Parallel Graph Algorithms | 2018 | SPAA |
 | [iSpan](algorithms/ispan/) | Parallel Identification of SCCs with Spanning Trees | 2018 | SC |
 | [par-scc](algorithms/par-scc/) | On Fast Parallel Detection of SCCs in Small-World Graphs | 2013 | SC |
+
+The [sequential baselines](algorithms/sequential-baselines/) provide
+outgoing-CSR-only Tarjan and Gabow implementations. They are separate from the
+four parallel algorithms above and do not use a GPU.
 
 ### Key Results
 
@@ -33,7 +37,10 @@ Wang et al. (2023) dominates, winning 23 of 36 graphs:
 │   ├── wang-etal/        # Wang et al. SIGMOD 2023
 │   ├── gbbs/             # GBBS (ParAlg)
 │   ├── ispan/            # iSpan SC 2018
-│   └── par-scc/          # par-scc SC 2013 (modified for GM_EDGE64)
+│   ├── par-scc/          # par-scc SC 2013 (modified for GM_EDGE64)
+│   └── sequential-baselines/
+│       ├── exact_scc.cpp   # Recovered exact iterative Tarjan analyzer
+│       └── scc_compare.cpp # Iterative Tarjan and Gabow runner
 ├── tools/                # BGR-based benchmark tooling
 │   ├── scc_analyzer.cpp  # par-scc analyzer with BGR loading
 │   ├── bgr2scc.cpp       # BGR → algorithm format converter
@@ -43,7 +50,8 @@ Wang et al. (2023) dominates, winning 23 of 36 graphs:
 ├── results/              # Benchmark results
 │   ├── Results.md        # Full analysis report
 │   ├── par_scc_results.csv
-│   └── modern_scc_results.csv
+│   ├── modern_scc_results.csv
+│   └── sequential_scc_historical.csv
 └── docs/                 # GitHub Pages documentation
 ```
 
@@ -71,6 +79,9 @@ cd algorithms/ispan/src && make
 
 # par-scc (with GM_EDGE64 for >2B edges)
 cd algorithms/par-scc && make lib && make bin
+
+# Exact sequential Tarjan/Gabow baselines and self-tests
+make -C algorithms/sequential-baselines check
 ```
 
 ### Convert BGR and Run
@@ -87,6 +98,10 @@ PARLAY_NUM_THREADS=128 algorithms/wang-etal/src/scc /dev/shm/scc_wang.bin -local
 PARLAY_NUM_THREADS=128 algorithms/gbbs/.../StronglyConnectedComponents -rounds 1 -stats -b /dev/shm/scc_wang.bin
 algorithms/ispan/src/ispan /dev/shm/scc_ispan_fw_beg.bin /dev/shm/scc_ispan_fw_csr.bin \
     /dev/shm/scc_ispan_bw_beg.bin /dev/shm/scc_ispan_bw_csr.bin 128 1 100 4 0.1 1
+
+# CPU-only outgoing-CSR baselines; '-' skips label output
+algorithms/sequential-baselines/scc_compare graph.bgr tarjan -
+algorithms/sequential-baselines/scc_compare graph.bgr gabow -
 ```
 
 ### Run Full Benchmark
@@ -114,6 +129,12 @@ Parallel spanning tree construction with relaxed synchronization. OpenMP-based w
 
 ### par-scc (SC 2013)
 Classic parallel SCC for small-world graphs. Trim + FW-BW decomposition. Shows poor scaling on web graphs with complex SCC structure.
+
+### Exact sequential baselines
+Iterative Tarjan and Gabow path-based implementations for correctness and
+single-thread comparisons. They read checked BGR v2 directly, use no transpose,
+and can emit canonical minimum-vertex labels for byte-for-byte comparison.
+See their [provenance and reproducibility notes](algorithms/sequential-baselines/README.md).
 
 ## License
 

@@ -1,0 +1,34 @@
+name: Sequential SCC baselines
+
+on:
+  push:
+    paths:
+      - "algorithms/sequential-baselines/**"
+      - ".github/workflows/sequential-baselines.yml"
+  pull_request:
+    paths:
+      - "algorithms/sequential-baselines/**"
+      - ".github/workflows/sequential-baselines.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build and test iterative Tarjan and Gabow
+        run: make -C algorithms/sequential-baselines check
+      - name: Run reconstructed baselines with ASan and UBSan
+        working-directory: algorithms/sequential-baselines
+        run: |
+          g++ -O1 -g -std=c++17 -Wall -Wextra -Wpedantic \
+            -fsanitize=address,undefined \
+            scc_compare.cpp -o /tmp/scc_compare-sanitize
+          ASAN_OPTIONS=detect_leaks=1 \
+            /tmp/scc_compare-sanitize --self-test
+          ASAN_OPTIONS=detect_leaks=1 \
+            python3 tests/test_bgr_cli.py \
+              /tmp/scc_compare-sanitize ./exact_scc

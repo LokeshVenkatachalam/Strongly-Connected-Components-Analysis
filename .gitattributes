@@ -1,0 +1,2 @@
+# Preserve the recovered source's original bytes and recorded SHA-256.
+algorithms/sequential-baselines/exact_scc.cpp -text whitespace=cr-at-eol
