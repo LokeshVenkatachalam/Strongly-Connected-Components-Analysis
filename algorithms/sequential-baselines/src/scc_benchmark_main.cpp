@@ -36,6 +36,16 @@ double parseLimit(const std::string& value) {
   return limit;
 }
 
+unsigned parseThreads(const std::string& value) {
+  std::size_t consumed = 0;
+  const unsigned long threads = std::stoul(value, &consumed);
+  if (consumed != value.size() || threads == 0 || threads > 256) {
+    throw std::runtime_error(
+        "--validation-threads must be in the range 1..256");
+  }
+  return static_cast<unsigned>(threads);
+}
+
 std::vector<std::string> splitAlgorithms(const std::string& value) {
   if (value == "all") {
     std::vector<std::string> names;
@@ -43,16 +53,6 @@ std::vector<std::string> splitAlgorithms(const std::string& value) {
       names.emplace_back(algorithm.name);
     }
     return names;
-  }
-
-  unsigned parseThreads(const std::string& value) {
-    std::size_t consumed = 0;
-    const unsigned long threads = std::stoul(value, &consumed);
-    if (consumed != value.size() || threads == 0 || threads > 256) {
-      throw std::runtime_error(
-          "--validation-threads must be in the range 1..256");
-    }
-    return static_cast<unsigned>(threads);
   }
 
   std::vector<std::string> names;
