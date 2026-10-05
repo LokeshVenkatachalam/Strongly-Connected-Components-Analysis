@@ -561,3 +561,61 @@ iSpan crashes or times out on certain web graphs, particularly at 64 and 128 thr
 | com-Orkut | bgr | 234M | ✓ | ✓ | ✓ | ✗ |
 
 These are not setup issues — the same graphs run correctly on Wang, GBBS, and par-scc.
+
+---
+
+## 8. Exact Sequential Baselines: Tarjan and Gabow
+
+These baselines are CPU-only, outgoing-CSR algorithms. The matched comparison
+ran on an L40S host with **2× AMD EPYC 9365 CPUs**, using **one CPU thread**.
+An NVIDIA L40S was present but was not used.
+
+### Matched Tarjan/Gabow SCC times
+
+| Graph | Vertices | Edges | Iterative Tarjan | Iterative Gabow | SCCs | Largest SCC |
+|:------|---------:|------:|-----------------:|----------------:|-----:|------------:|
+| sk-2005 | 50,636,154 | 1,949,412,601 | 6.979132 s | **6.818466 s** | 8,815,057 | 35,874,412 |
+| uk-2014 | 787,801,471 | 47,614,527,250 | 203.094336 s | **201.405907 s** | 106,139,734 | 538,924,839 |
+
+The SCC timer includes workspace initialization and canonical label assignment.
+It excludes graph loading, label-file output, and SHA-256 comparison. Load times
+were 4.383516 s (Tarjan) and 3.196504 s (Gabow) for sk-2005, and 146.116166 s
+(Tarjan) and 91.116613 s (Gabow) for uk-2014.
+
+For each graph, the complete Tarjan and Gabow label vectors matched
+byte-for-byte:
+
+| Graph | Canonical label SHA-256 |
+|:------|:-----------------------|
+| sk-2005 | `5d5d47b8c98a3f4a132343c6ffcf24a7620a654e9947239d9fc0b48a1cf57d6c` |
+| uk-2014 | `e52c280960b527521c9b83fe7ceb8eaf3d56b2f7b6da21da93a7aa0eaad48836` |
+
+### Additional exact Tarjan SCC-phase times
+
+A separate, fully checked exact-Tarjan campaign produced these SCC-phase
+times on the same L40S CPU host with one thread:
+
+| Graph | Tarjan SCC time | Wall-clock form |
+|:------|----------------:|:----------------|
+| com-LiveJournal | 1.252918 s | 1.253 s |
+| sk-2005 | 7.056674 s | 7.057 s |
+| MOLIERE_2016 | 148.340172 s | 2m 28.340s |
+| AGATHA_2015 | 355.008970 s | 5m 55.009s |
+| clueweb12 | 1,093.109398 s | 18m 13.109s |
+| uk-2014 | 2,279.616942 s | 37m 59.617s |
+| eu-2015 | 6,370.622658 s | 1h 46m 10.623s |
+
+This second campaign used a different, fully checked out-of-core execution
+path. In particular, its uk-2014 result is not directly comparable with the
+203.094336-second matched in-memory experiment above.
+
+> **Reproducibility note:** The source that produced the matched 2026-09-13
+> Tarjan/Gabow timings was untracked and later deleted. Its verified binary and
+> source hashes survive. `scc_compare.cpp` is a tested reconstruction, not a
+> claim that the deleted source was recovered. The historical rows remain
+> attributed to binary
+> `9f83aba74bb9a9d528f26204300e70b195da562442968c1be03f4321ad8aed7d`.
+
+See the [sequential source and provenance](../algorithms/sequential-baselines/),
+the [matched Tarjan/Gabow CSV](sequential_scc_historical.csv), and the
+[exact Tarjan CSV](exact_tarjan_l40s.csv).

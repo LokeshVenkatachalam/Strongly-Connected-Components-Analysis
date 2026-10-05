@@ -94,6 +94,37 @@ make bin    # Build SCC binary
 
 **Methods:** 0 (Trim+FW-BW), 1 (Global FW-BW), 2 (Full pipeline), 3 (Tarjan), 4 (Trim+Tarjan)
 
+### Exact Sequential Baselines
+
+The repository includes outgoing-CSR-only, iterative Tarjan and Gabow
+implementations. They read checked BGR v2 directly, require one CPU thread, and
+do not build a transpose or use a GPU.
+
+```bash
+# Build and run the exhaustive correctness tests
+make -C algorithms/sequential-baselines check
+
+# Write one canonical uint32 label per vertex
+algorithms/sequential-baselines/scc_compare \
+  graph.bgr tarjan tarjan.labels.bin 1800
+algorithms/sequential-baselines/scc_compare \
+  graph.bgr gabow gabow.labels.bin 1800
+
+# Use '-' to skip label output
+algorithms/sequential-baselines/scc_compare graph.bgr tarjan -
+
+# Recovered exact Tarjan analyzer with additional verification
+algorithms/sequential-baselines/exact_scc graph.bgr
+```
+
+The optional final argument is the SCC-phase time limit in seconds. Labels use
+the minimum vertex ID in each component, so Tarjan and Gabow outputs can be
+compared byte-for-byte.
+
+See the
+[source and provenance notes](https://github.com/LokeshVenkatachalam/Strongly-Connected-Components-Analysis/tree/main/algorithms/sequential-baselines)
+and the [measured sequential runtimes]({{ site.baseurl }}/results/#8-exact-sequential-baselines-tarjan-and-gabow).
+
 ---
 
 ## BGR Format Conversion

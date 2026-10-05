@@ -1,0 +1,8 @@
+graph,algorithm,threads,host_cpu,gpu_present,gpu_used,scc_seconds,source_sha256,timing_scope,notes
+com-LiveJournal,tarjan-iterative,1,"2x AMD EPYC 9365","NVIDIA L40S 48GB",false,1.252918,050f7329d1207fc292890db0971083f133e506866c1b2c8d13d272da9cf5cbff,scc-phase,"fully checked exact analyzer"
+sk-2005,tarjan-iterative,1,"2x AMD EPYC 9365","NVIDIA L40S 48GB",false,7.056674,050f7329d1207fc292890db0971083f133e506866c1b2c8d13d272da9cf5cbff,scc-phase,"fully checked exact analyzer"
+MOLIERE_2016,tarjan-iterative,1,"2x AMD EPYC 9365","NVIDIA L40S 48GB",false,148.340172,050f7329d1207fc292890db0971083f133e506866c1b2c8d13d272da9cf5cbff,scc-phase,"fully checked exact analyzer"
+AGATHA_2015,tarjan-iterative,1,"2x AMD EPYC 9365","NVIDIA L40S 48GB",false,355.008970,050f7329d1207fc292890db0971083f133e506866c1b2c8d13d272da9cf5cbff,scc-phase,"fully checked exact analyzer"
+clueweb12,tarjan-iterative,1,"2x AMD EPYC 9365","NVIDIA L40S 48GB",false,1093.109398,050f7329d1207fc292890db0971083f133e506866c1b2c8d13d272da9cf5cbff,scc-phase,"fully checked exact analyzer"
+uk-2014,tarjan-iterative,1,"2x AMD EPYC 9365","NVIDIA L40S 48GB",false,2279.616942,050f7329d1207fc292890db0971083f133e506866c1b2c8d13d272da9cf5cbff,scc-phase,"out-of-core execution; not comparable to matched in-memory experiment"
+eu-2015,tarjan-iterative,1,"2x AMD EPYC 9365","NVIDIA L40S 48GB",false,6370.622658,050f7329d1207fc292890db0971083f133e506866c1b2c8d13d272da9cf5cbff,scc-phase,"fully checked exact analyzer"

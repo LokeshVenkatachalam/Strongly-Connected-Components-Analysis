@@ -51,7 +51,8 @@ Wang et al. (2023) dominates, winning 23 of 36 graphs:
 │   ├── Results.md        # Full analysis report
 │   ├── par_scc_results.csv
 │   ├── modern_scc_results.csv
-│   └── sequential_scc_historical.csv
+│   ├── sequential_scc_historical.csv
+│   └── exact_tarjan_l40s.csv
 └── docs/                 # GitHub Pages documentation
 ```
 

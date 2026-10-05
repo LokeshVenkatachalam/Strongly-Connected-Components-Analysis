@@ -29,6 +29,9 @@ Benchmarking parallel Strongly Connected Components algorithms on graphs with up
 
 Win count = number of graphs (out of 36) where the algorithm achieved the fastest time at its best thread count.
 
+For single-thread correctness and timing comparisons, the repository also
+includes [exact iterative Tarjan and Gabow baselines]({{ site.baseurl }}/documentation/#exact-sequential-baselines).
+
 ---
 
 ## Headline: Wang et al. vs par-scc
@@ -63,52 +66,6 @@ par-scc shows **poor scaling on web graphs** (1–2× at 128T) due to sequential
 
 ---
 
-## LV Favicon Concepts
-
-The browser tab now uses your uploaded **LV-graph2.png**.
-The five SVG color variants remain below for comparison.
-
-<div class="favicon-grid">
-  <div class="favicon-card active">
-    <img src="{{ '/assets/favicons/LV-graph2.png' | relative_url }}" alt="Current uploaded LV favicon">
-    <strong>Current — Uploaded LV Graph</strong>
-    <code>LV-graph2.png</code>
-    <p>Active browser-tab favicon</p>
-  </div>
-  <div class="favicon-card">
-    <img src="{{ '/assets/favicons/lv-loop-midnight-emerald.svg' | relative_url }}" alt="Option 1 midnight emerald favicon">
-    <strong>Option 1 — Midnight Emerald</strong>
-    <code>#0B1F4D</code> + <code>#34D399</code>
-    <p>SVG concept variation</p>
-  </div>
-  <div class="favicon-card">
-    <img src="{{ '/assets/favicons/lv-loop-cobalt-mint.svg' | relative_url }}" alt="Option 2 cobalt mint favicon">
-    <strong>Option 2 — Cobalt Mint</strong>
-    <code>#163B74</code> + <code>#2DD4BF</code>
-    <p>Brighter blue, softer mint loop</p>
-  </div>
-  <div class="favicon-card">
-    <img src="{{ '/assets/favicons/lv-loop-indigo-lime.svg' | relative_url }}" alt="Option 3 indigo lime favicon">
-    <strong>Option 3 — Indigo Lime</strong>
-    <code>#1E1B4B</code> + <code>#84CC16</code>
-    <p>More contrast with a lime accent</p>
-  </div>
-  <div class="favicon-card">
-    <img src="{{ '/assets/favicons/lv-loop-slate-jade.svg' | relative_url }}" alt="Option 4 slate jade favicon">
-    <strong>Option 4 — Slate Jade</strong>
-    <code>#0F172A</code> + <code>#10B981</code>
-    <p>Darkest, most understated version</p>
-  </div>
-  <div class="favicon-card">
-    <img src="{{ '/assets/favicons/lv-loop-royal-cyan.svg' | relative_url }}" alt="Option 5 royal cyan favicon">
-    <strong>Option 5 — Royal Cyan</strong>
-    <code>#1D2D6C</code> + <code>#22D3EE</code>
-    <p>Cooler accent with a brighter loop</p>
-  </div>
-</div>
-
----
-
 ## Graphs
 
 **36 graphs** from two collections, all in [BGR format](https://github.com/hpc-heterogeneous-graph-algorithms/graph-format-converters):
@@ -129,20 +86,28 @@ The five SVG color variants remain below for comparison.
 ## Quick Start
 
 ```bash
+# Run from the repository root.
+
 # Build Wang et al. (fastest)
-cd algorithms/wang-etal && git submodule update --init --recursive
-cd src && make scc
+(cd algorithms/wang-etal && git submodule update --init --recursive)
+make -C algorithms/wang-etal/src scc
 
 # Convert BGR graph → Wang binary format (via /dev/shm)
-cd tools && g++ -O3 -std=c++17 -fopenmp -I<BGR_SRC> bgr2scc.cpp -o bgr2scc
-./bgr2scc /path/to/graph.bgr
+g++ -O3 -std=c++17 -fopenmp -I<BGR_SRC> \
+  tools/bgr2scc.cpp -o tools/bgr2scc
+./tools/bgr2scc /path/to/graph.bgr
 
 # Run SCC with 128 threads
 PARLAY_NUM_THREADS=128 ./algorithms/wang-etal/src/scc \
   /dev/shm/scc_wang.bin -local_reach -local_scc -t 1 -status
+
+# Build, test, and run the exact CPU-only sequential baselines
+make -C algorithms/sequential-baselines check
+./algorithms/sequential-baselines/scc_compare graph.bgr tarjan -
+./algorithms/sequential-baselines/scc_compare graph.bgr gabow -
 ```
 
-See [Documentation]({{ site.baseurl }}/documentation/) for full build instructions for all 4 algorithms.
+See [Documentation]({{ site.baseurl }}/documentation/) for full build instructions.
 
 ---
 
@@ -154,11 +119,13 @@ algorithms/
   gbbs/          ← SPAA 2018
   ispan/         ← SC 2018
   par-scc/       ← SC 2013 (modified: GM_EDGE64)
+  sequential-baselines/
+                  ← exact iterative Tarjan and Gabow
 tools/
   bgr2scc.cpp    ← BGR → algorithm format converter
   scc_analyzer.cpp, run scripts, gen_report.py
 results/
-  Results.md     ← Full 7-section analysis
+  Results.md     ← Full 8-section analysis
   *.csv          ← Raw timing data
 docs/            ← This site
 ```
