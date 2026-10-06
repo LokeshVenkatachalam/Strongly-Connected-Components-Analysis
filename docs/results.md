@@ -608,6 +608,43 @@ CPU-hours; actual summed CPU execution was 0.780 CPU-hours. Label files were
 not written, but all four runs independently reported the same component count
 and largest-component size.
 
+### AGATHA load-once and 128-thread comparison on Node 10
+
+These measurements use the fixed original `AGATHA_2015` BGR with
+183,964,077 vertices and 11,588,725,964 arcs. This is the symmetric original,
+not the 5.79-billion-arc randomly oriented graph listed earlier in this report.
+Every algorithm reported 13 SCCs and a largest SCC of 183,963,989 vertices.
+
+Job `42273` mapped and validated the BGR once with eight validation threads,
+then ran each exact SCC implementation with one thread:
+
+| Algorithm | SCC time | Edge inspections |
+|:----------|---------:|-----------------:|
+| **Tarjan** | **557.963 s (9m 17.963s)** | 11,588,725,964 |
+| Gabow | 576.364 s (9m 36.364s) | 11,588,725,964 |
+| Tarjan-Zwick | 907.241 s (15m 07.241s) | 11,588,725,964 |
+| Pearce | 1,430.594 s (23m 50.594s) | 23,177,451,928 |
+
+Shared validation/load took **7.925 seconds**. The four SCC phases totaled
+**3,472.162 seconds**, and the complete process took **3,480.412 seconds
+(58m 00.412s)**.
+
+The 128-thread runs used Node-10-native binaries compiled for AMD Zen 2. Wang
+used the deterministic maximum-outdegree initial-pivot policy; it is therefore
+reported as `wang-max-outdegree`, not as the randomized upstream default.
+
+| Algorithm | SCC time | Forward load | Reverse load | Reported total | Process wall time |
+|:----------|---------:|-------------:|-------------:|---------------:|------------------:|
+| **GBBS BGSS16** | **2.448 s** | not separately reported | n/a | 2.448 s | 163.44 s |
+| par-scc Method 1 | 6.700 s | 4.958 s | 4.910 s | 17.534 s | 34.03 s |
+| Wang max-outdegree | 103.651 s | 19.247 s | 19.203 s | 157.213 s | 170.49 s |
+
+For GBBS, `2.448 s` is its measured `time per iter`; the 163.44-second process
+wall time also includes reading and materializing the 47.8 GB converted graph.
+The streaming BGR-to-GBBS conversion was a separate 62.281-second preprocessing
+step. The allocated GPU was required only by cluster billing policy and was not
+used by any SCC implementation.
+
 {: .warning }
 > The source that produced the matched 2026-09-13 Tarjan/Gabow timings was
 > untracked and later deleted. Its verified binary and source hashes survive.
@@ -621,5 +658,8 @@ and the machine-readable
 [matched Tarjan/Gabow CSV](https://github.com/LokeshVenkatachalam/Strongly-Connected-Components-Analysis/blob/main/results/sequential_scc_historical.csv)
 and
 [ClueWeb load-once CSV](https://github.com/LokeshVenkatachalam/Strongly-Connected-Components-Analysis/blob/main/results/sequential_scc_clueweb_node10.csv)
+and
+[AGATHA load-once CSV](https://github.com/LokeshVenkatachalam/Strongly-Connected-Components-Analysis/blob/main/results/sequential_scc_agatha_node10.csv),
+[first-three parallel campaign CSV](https://github.com/LokeshVenkatachalam/Strongly-Connected-Components-Analysis/blob/main/results/parallel_scc_first_three_node10.csv),
 and
 [exact Tarjan CSV](https://github.com/LokeshVenkatachalam/Strongly-Connected-Components-Analysis/blob/main/results/exact_tarjan_l40s.csv).
