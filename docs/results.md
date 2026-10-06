@@ -669,6 +669,31 @@ The streaming BGR-to-GBBS conversion was a separate 62.281-second preprocessing
 step. The allocated GPU was required only by cluster billing policy and was not
 used by any SCC implementation.
 
+### UK-2014 load-once comparison on Node 10
+
+Job `42385` mapped and validated the fixed source-verified UK-2014 BGR once,
+then ran all four exact SCC implementations with one thread. The graph has
+787,801,471 vertices and 47,614,527,250 arcs. Every algorithm found
+106,139,734 SCCs with a largest SCC of 538,924,839 vertices.
+
+| Algorithm | SCC time | Edge inspections |
+|:----------|---------:|-----------------:|
+| **Gabow** | **306.659 s (5m 06.659s)** | 47,614,527,250 |
+| Tarjan | 312.356 s (5m 12.356s) | 47,614,527,250 |
+| Tarjan-Zwick | 646.344 s (10m 46.344s) | 47,614,527,250 |
+| Pearce | 769.958 s (12m 49.958s) | 95,229,054,500 |
+
+Shared validation/load took **32.889 seconds**. The four SCC phases totaled
+**2,035.317 seconds**, and the complete benchmark took **2,069.683 seconds
+(34m 29.683s)** internally and 34m 47.50s by process wall clock. Peak resident
+memory was **200.3 GiB**.
+
+The successful retry requested 300 GB. Slurm consequently allocated 38 CPUs
+under the cluster's 8 GB-per-CPU memory rule, but only the shared validation
+used eight threads; every SCC phase remained single-threaded. A preceding
+125 GiB attempt was stopped before any SCC phase because it stayed at its
+memory ceiling for 78 minutes.
+
 {: .warning }
 > The source that produced the matched 2026-09-13 Tarjan/Gabow timings was
 > untracked and later deleted. Its verified binary and source hashes survive.
@@ -684,6 +709,7 @@ and
 [ClueWeb load-once CSV](https://github.com/LokeshVenkatachalam/Strongly-Connected-Components-Analysis/blob/main/results/sequential_scc_clueweb_node10.csv)
 and
 [AGATHA load-once CSV](https://github.com/LokeshVenkatachalam/Strongly-Connected-Components-Analysis/blob/main/results/sequential_scc_agatha_node10.csv),
+[UK-2014 load-once CSV](https://github.com/LokeshVenkatachalam/Strongly-Connected-Components-Analysis/blob/main/results/sequential_scc_uk_node10.csv),
 [first-three parallel campaign CSV](https://github.com/LokeshVenkatachalam/Strongly-Connected-Components-Analysis/blob/main/results/parallel_scc_first_three_node10.csv),
 and
 [exact Tarjan CSV](https://github.com/LokeshVenkatachalam/Strongly-Connected-Components-Analysis/blob/main/results/exact_tarjan_l40s.csv).
