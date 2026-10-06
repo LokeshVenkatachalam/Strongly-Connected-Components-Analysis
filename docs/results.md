@@ -694,6 +694,30 @@ used eight threads; every SCC phase remained single-threaded. A preceding
 125 GiB attempt was stopped before any SCC phase because it stayed at its
 memory ceiling for 78 minutes.
 
+#### 128-thread comparison
+
+The three Node-10-native parallel binaries used the same source-verified input
+and all found the expected 106,139,734 SCCs. Wang and GBBS also reported the
+expected largest SCC of 538,924,839 vertices.
+
+| Algorithm | SCC time | Forward load | Reverse load | Reported total | Process wall time | Peak resident memory |
+|:----------|---------:|-------------:|-------------:|---------------:|------------------:|---------------------:|
+| **GBBS BGSS16** | **106.574 s** | not separately reported | n/a | 106.574 s | 1,047.03 s | 800.9 GiB |
+| par-scc Method 1 | 1,218.481 s | 65.130 s | 80.185 s | 1,371.048 s | 1,441.59 s | 522.3 GiB |
+| Wang max-outdegree | 3,447.850 s | 111.271 s | 100.821 s | 3,732.700 s | 3,794.00 s | 436.7 GiB |
+
+Relative to single-thread Gabow at 306.659 seconds, GBBS was **2.88x faster**.
+par-scc was **3.97x slower**, and Wang was **11.24x slower**. UK-2014 leaves
+about 248.9 million vertices outside its largest SCC and contains 106.1 million
+SCCs, making repeated FW-BW residual decomposition substantially more expensive
+than a single linear Gabow traversal.
+
+The prepared reverse BGR was built and validated once in **1,673.812 seconds**
+(27m 53.812s). GBBS additionally required a **584.861-second** streaming
+conversion to its 196.761 GB input format. The measured GBBS iteration followed
+a 156.810-second warm-up. Its temporary converted graph was removed after the
+validated run.
+
 {: .warning }
 > The source that produced the matched 2026-09-13 Tarjan/Gabow timings was
 > untracked and later deleted. Its verified binary and source hashes survive.
