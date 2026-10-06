@@ -5,7 +5,9 @@ BIN = ../bin
 INC = inc
 SRC = src
 OBJ = obj
-CFLAGS = -O3 -g -I$(INC) -fopenmp -Wall 
+OPT_FLAGS ?= -O3 -DNDEBUG
+ARCH_FLAGS ?=
+CFLAGS = $(OPT_FLAGS) $(ARCH_FLAGS) -I$(INC) -fopenmp -Wall
 OUT =$(LIB)/libgmgraph.a 
 
 # where to find source codes
