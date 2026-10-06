@@ -286,6 +286,52 @@ void gm_graph::make_reverse_edges() {
     delete[] loc;
 }
 
+void gm_graph::make_reverse_edges_scc() {
+    if (_reverse_edge) return;
+    if (!_frozen) freeze();
+
+    const node_t n_nodes = num_nodes();
+    r_begin = new edge_t[n_nodes + 1];
+    r_node_idx = new node_t[num_edges()];
+    edge_t* cursor = new edge_t[n_nodes];
+
+#pragma omp parallel for schedule(static)
+    for (node_t i = 0; i <= n_nodes; ++i) {
+        r_begin[i] = 0;
+    }
+
+#pragma omp parallel for schedule(dynamic, 4096)
+    for (node_t source = 0; source < n_nodes; ++source) {
+        for (edge_t edge = begin[source]; edge < begin[source + 1]; ++edge) {
+            const node_t destination = node_idx[edge];
+            _gm_atomic_fetch_and_add_edge(&(r_begin[destination]), 1);
+        }
+    }
+
+    const edge_t edge_sum =
+        parallel_prefix_sum(n_nodes, r_begin, r_begin);
+    r_begin[n_nodes] = edge_sum;
+    assert(edge_sum == num_edges());
+
+#pragma omp parallel for schedule(static)
+    for (node_t i = 0; i < n_nodes; ++i) {
+        cursor[i] = r_begin[i];
+    }
+
+#pragma omp parallel for schedule(dynamic, 4096)
+    for (node_t source = 0; source < n_nodes; ++source) {
+        for (edge_t edge = begin[source]; edge < begin[source + 1]; ++edge) {
+            const node_t destination = node_idx[edge];
+            const edge_t reverse_edge =
+                _gm_atomic_fetch_and_add_edge(&(cursor[destination]), 1);
+            r_node_idx[reverse_edge] = source;
+        }
+    }
+
+    delete[] cursor;
+    _reverse_edge = true;
+}
+
 static void swap(edge_t idx1, edge_t idx2, node_t* dest_array, edge_t* aux_array, edge_t* aux_array2) {
     if (idx1 == idx2) return;
 
@@ -619,5 +665,4 @@ bool gm_graph::load_binary_hdfs(char* filename)
     assert(false);
 }
 #endif
-
 

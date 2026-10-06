@@ -1,0 +1,64 @@
+name: Parallel SCC tools
+
+on:
+  push:
+    paths:
+      - "algorithms/par-scc/**"
+      - "tools/bgr_to_gbbs.cpp"
+      - ".github/workflows/parallel-scc-tools.yml"
+  pull_request:
+    paths:
+      - "algorithms/par-scc/**"
+      - "tools/bgr_to_gbbs.cpp"
+      - ".github/workflows/parallel-scc-tools.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build optimized par-scc BGR runner
+        run: make -C algorithms/par-scc clean_all bgr
+      - name: Build streaming BGR-to-GBBS converter
+        run: >-
+          g++ -O3 -std=c++17 -fopenmp -Wall -Wextra -Wpedantic
+          tools/bgr_to_gbbs.cpp -o /tmp/bgr_to_gbbs
+      - name: Generate BGR fixture
+        run: |
+          python3 - <<'PY'
+          import struct
+          rows = [[1], [2], [0, 3], [3], [5], [4], [7], [6, 5]]
+          edges = [v for row in rows for v in row]
+          ends, count = [], 0
+          for row in rows:
+              count += len(row)
+              ends.append(count)
+          with open("/tmp/scc-small.bgr", "wb") as output:
+              output.write(bytes([0]))
+              output.write(struct.pack("<II", len(rows), len(edges)))
+              output.write(struct.pack("<" + "I" * len(ends), *ends))
+              output.write(struct.pack("<" + "I" * len(edges), *edges))
+          PY
+      - name: Verify par-scc result
+        run: |
+          OMP_NUM_THREADS=2 algorithms/par-scc/scc_bgr \
+            /tmp/scc-small.bgr 2 | tee /tmp/par-scc.log
+          grep -q '"components":4' /tmp/par-scc.log
+      - name: Verify GBBS binary layout
+        run: |
+          /tmp/bgr_to_gbbs \
+            /tmp/scc-small.bgr /tmp/scc-small-gbbs.bin 2
+          python3 - <<'PY'
+          import struct
+          data = open("/tmp/scc-small-gbbs.bin", "rb").read()
+          n, m, size = struct.unpack_from("<QQQ", data)
+          assert (n, m, size) == (8, 10, len(data))
+          offsets = struct.unpack_from("<" + "Q" * 9, data, 24)
+          edges = struct.unpack_from("<" + "I" * 10, data, 24 + 9 * 8)
+          assert offsets == (0, 1, 2, 4, 5, 6, 7, 8, 10)
+          assert edges == (1, 2, 0, 3, 3, 5, 4, 7, 6, 5)
+          PY

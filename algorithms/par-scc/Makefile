@@ -6,6 +6,9 @@ lib:
 bin:
 	@cd src; make
 
+bgr: lib
+	@cd src; make bgr
+
 clean:
 	@cd src; make clean
 
