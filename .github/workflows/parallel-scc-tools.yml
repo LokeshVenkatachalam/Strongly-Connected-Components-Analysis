@@ -42,11 +42,26 @@ jobs:
               output.write(struct.pack("<II", len(rows), len(edges)))
               output.write(struct.pack("<" + "I" * len(ends), *ends))
               output.write(struct.pack("<" + "I" * len(edges), *edges))
+          reverse = [[] for _ in rows]
+          for source, row in enumerate(rows):
+              for destination in row:
+                  reverse[destination].append(source)
+          reverse_edges = [v for row in reverse for v in row]
+          reverse_ends, count = [], 0
+          for row in reverse:
+              count += len(row)
+              reverse_ends.append(count)
+          with open("/tmp/scc-small-reverse.bgr", "wb") as output:
+              output.write(bytes([0]))
+              output.write(struct.pack("<II", len(rows), len(reverse_edges)))
+              output.write(struct.pack("<" + "I" * len(reverse_ends), *reverse_ends))
+              output.write(struct.pack("<" + "I" * len(reverse_edges), *reverse_edges))
           PY
       - name: Verify par-scc result
         run: |
           OMP_NUM_THREADS=2 algorithms/par-scc/scc_bgr \
-            /tmp/scc-small.bgr 2 | tee /tmp/par-scc.log
+            /tmp/scc-small.bgr /tmp/scc-small-reverse.bgr 2 |
+            tee /tmp/par-scc.log
           grep -q '"components":4' /tmp/par-scc.log
       - name: Verify GBBS binary layout
         run: |

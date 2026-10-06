@@ -162,6 +162,34 @@ void loadForwardBgr(gm_graph& graph, const std::string& path) {
         throw std::runtime_error("invalid BGR destination");
 }
 
+void loadReverseBgr(gm_graph& graph, const std::string& path) {
+    BgrView input(path);
+    if (input.n != static_cast<uint64_t>(graph.num_nodes()) ||
+        input.m != static_cast<uint64_t>(graph.num_edges()))
+        throw std::runtime_error("reverse BGR dimensions differ");
+    graph.prepare_external_reverse_scc();
+
+    graph.r_begin[0] = 0;
+#pragma omp parallel for schedule(static)
+    for (uint64_t vertex = 0; vertex < input.n; ++vertex) {
+        graph.r_begin[vertex + 1] = input.rowEnd(vertex);
+    }
+    if (graph.r_begin[input.n] != input.m)
+        throw std::runtime_error("invalid final reverse BGR row end");
+
+    std::atomic<bool> invalid{false};
+#pragma omp parallel for schedule(static)
+    for (uint64_t edge = 0; edge < input.m; ++edge) {
+        try {
+            graph.r_node_idx[edge] = input.destination(edge);
+        } catch (...) {
+            invalid.store(true, std::memory_order_relaxed);
+        }
+    }
+    if (invalid.load(std::memory_order_relaxed))
+        throw std::runtime_error("invalid reverse BGR destination");
+}
+
 void initializeScc(gm_graph& graph, int threads) {
     gm_rt_initialize();
     gm_rt_set_num_threads(threads);
@@ -207,13 +235,17 @@ void runMethod1(gm_graph& graph) {
 
 int main(int argc, char** argv) {
     std::setvbuf(stdout, nullptr, _IOLBF, 0);
-    if (argc != 3) {
-        std::fprintf(stderr, "usage: %s INPUT.bgr THREADS\n", argv[0]);
+    if (argc != 3 && argc != 4) {
+        std::fprintf(
+            stderr,
+            "usage: %s INPUT.bgr [REVERSE.bgr] THREADS\n",
+            argv[0]);
         return 2;
     }
 
     const std::string input = argv[1];
-    const int threads = std::stoi(argv[2]);
+    const std::string reverse = argc == 4 ? argv[2] : "";
+    const int threads = std::stoi(argv[argc - 1]);
     if (threads <= 0 || threads > 256) {
         std::fprintf(stderr, "thread count must be in 1..256\n");
         return 2;
@@ -228,7 +260,10 @@ int main(int argc, char** argv) {
         const double load_seconds = secondsSince(load_start);
 
         const auto transpose_start = Clock::now();
-        graph.make_reverse_edges_scc();
+        if (reverse.empty())
+            graph.make_reverse_edges_scc();
+        else
+            loadReverseBgr(graph, reverse);
         const double transpose_seconds = secondsSince(transpose_start);
 
         initializeScc(graph, threads);
@@ -245,6 +280,7 @@ int main(int argc, char** argv) {
         std::cout << std::fixed << std::setprecision(9)
                   << "PAR_SCC_RESULT {"
                   << "\"input\":\"" << input << "\","
+                  << "\"reverse_input\":\"" << reverse << "\","
                   << "\"vertices\":" << graph.num_nodes() << ","
                   << "\"edges\":" << graph.num_edges() << ","
                   << "\"threads\":" << threads << ","

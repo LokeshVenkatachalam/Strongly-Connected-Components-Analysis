@@ -273,6 +273,7 @@ friend class gm_edge_list_graph_reader;
     void prepare_external_creation(node_t n, edge_t m, bool clean_key_id_mappings);
     // SCC-only reverse CSR without forward/reverse edge-index maps.
     void make_reverse_edges_scc();
+    void prepare_external_reverse_scc();
     bool store_binary(char* filename);          // attributes not saved
     bool load_binary(char* filename);           // call this to an empty graph object
 

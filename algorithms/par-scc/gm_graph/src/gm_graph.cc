@@ -332,6 +332,16 @@ void gm_graph::make_reverse_edges_scc() {
     _reverse_edge = true;
 }
 
+void gm_graph::prepare_external_reverse_scc() {
+    if (_reverse_edge)
+        return;
+    if (!_frozen)
+        freeze();
+    r_begin = new edge_t[num_nodes() + 1];
+    r_node_idx = new node_t[num_edges()];
+    _reverse_edge = true;
+}
+
 static void swap(edge_t idx1, edge_t idx2, node_t* dest_array, edge_t* aux_array, edge_t* aux_array2) {
     if (idx1 == idx2) return;
 
@@ -665,4 +675,3 @@ bool gm_graph::load_binary_hdfs(char* filename)
     assert(false);
 }
 #endif
-
