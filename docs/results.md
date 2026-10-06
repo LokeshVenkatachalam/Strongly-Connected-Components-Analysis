@@ -608,6 +608,30 @@ CPU-hours; actual summed CPU execution was 0.780 CPU-hours. Label files were
 not written, but all four runs independently reported the same component count
 and largest-component size.
 
+#### 128-thread comparison
+
+The fixed source-verified ClueWeb graph was also run through the three
+Node-10-native parallel binaries. All three produced 135,223,661 SCCs; Wang and
+GBBS also reported the expected largest SCC of 774,373,029 vertices.
+
+| Algorithm | SCC time | Forward load | Reverse load | Reported total | Process wall time | Peak resident memory |
+|:----------|---------:|-------------:|-------------:|---------------:|------------------:|---------------------:|
+| **GBBS BGSS16** | **25.963 s** | not separately reported | n/a | 25.963 s | 783.99 s | 724.1 GiB |
+| par-scc Method 1 | 189.858 s | 27.428 s | 90.359 s | 317.617 s | 377.72 s | 458.2 GiB |
+| Wang max-outdegree | 1,490.875 s | 84.765 s | 94.102 s | 1,746.883 s | 1,798.94 s | 406.7 GiB |
+
+Relative to the fastest single-thread result, Tarjan at 531.541 seconds, the
+SCC-phase speedups were **20.47x for GBBS** and **2.80x for par-scc**. Wang was
+**2.80x slower** than Tarjan despite using 128 workers. The fragmented web graph
+has 135 million SCCs, which produces substantial residual-search and
+bookkeeping overhead for Wang.
+
+GBBS required a one-time streaming BGR conversion of **375.063 seconds**
+(6m 15.063s), producing a 178.124 GB binary. Its executable does not report
+graph loading separately. The 783.99-second process time includes graph
+loading/materialization, one 62.745-second warm-up invocation, result-statistics
+scans, the measured 25.963-second iteration, and cleanup.
+
 ### AGATHA load-once and 128-thread comparison on Node 10
 
 These measurements use the fixed original `AGATHA_2015` BGR with
