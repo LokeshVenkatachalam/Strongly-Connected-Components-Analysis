@@ -1,0 +1,321 @@
+--- a/gbbs/graph_io.cc
++++ b/gbbs/graph_io.cc
+@@ -1,11 +1,135 @@
+ #include "graph_io.h"
+ 
+ #include <sys/mman.h>
++
++#include <atomic>
++#include <chrono>
++#include <cstdio>
++#include <cstring>
++#include <limits>
++#include <stdexcept>
+ 
+ namespace gbbs {
+ namespace gbbs_io {
+ 
+ typedef std::pair<uintE, uintE> intPair;
++
++namespace {
++
++using BgrClock = std::chrono::steady_clock;
++
++struct MappedBgr {
++  char* data;
++  size_t bytes;
++
++  explicit MappedBgr(const char* path) {
++    std::tie(data, bytes) = mmapStringFromFile(path);
++  }
++
++  ~MappedBgr() { unmmap(data, bytes); }
++
++  MappedBgr(const MappedBgr&) = delete;
++  MappedBgr& operator=(const MappedBgr&) = delete;
++};
++
++struct BgrView {
++  const unsigned char* offsets;
++  const unsigned char* destinations;
++  uint64_t n;
++  uint64_t m;
++  unsigned node_bytes;
++  unsigned edge_bytes;
++};
++
++template <class T>
++T loadUnaligned(const unsigned char* address) {
++  T value;
++  std::memcpy(&value, address, sizeof(value));
++  return value;
++}
++
++uint64_t checkedMultiply(uint64_t left, uint64_t right) {
++  if (right != 0 &&
++      left > std::numeric_limits<uint64_t>::max() / right) {
++    throw std::overflow_error("BGR size multiplication overflow");
++  }
++  return left * right;
++}
++
++uint64_t checkedAdd(uint64_t left, uint64_t right) {
++  if (right > std::numeric_limits<uint64_t>::max() - left) {
++    throw std::overflow_error("BGR size addition overflow");
++  }
++  return left + right;
++}
++
++BgrView parseBgr(const MappedBgr& mapping, const char* path) {
++  if (mapping.bytes < 9) {
++    throw std::runtime_error(std::string(path) + ": truncated BGR header");
++  }
++  const auto* data =
++      reinterpret_cast<const unsigned char*>(mapping.data);
++  const uint8_t flags = data[0];
++  if ((flags & ~0x0bU) != 0) {
++    throw std::runtime_error(std::string(path) + ": reserved BGR flags");
++  }
++  if ((flags & 0x08U) != 0) {
++    throw std::runtime_error(std::string(path) + ": weighted BGR unsupported");
++  }
++
++  const unsigned node_bytes = (flags & 0x01U) ? 8 : 4;
++  const unsigned edge_bytes = (flags & 0x02U) ? 8 : 4;
++  const uint64_t n =
++      node_bytes == 8 ? loadUnaligned<uint64_t>(data + 1)
++                      : loadUnaligned<uint32_t>(data + 1);
++  const uint64_t m =
++      edge_bytes == 8
++          ? loadUnaligned<uint64_t>(data + 1 + node_bytes)
++          : loadUnaligned<uint32_t>(data + 1 + node_bytes);
++  if (n > std::numeric_limits<uintE>::max()) {
++    throw std::runtime_error(std::string(path) + ": vertex IDs exceed uintE");
++  }
++  if (m > std::numeric_limits<uintT>::max()) {
++    throw std::runtime_error(std::string(path) + ": edge count exceeds uintT");
++  }
++
++  const uint64_t offsets_offset = 1 + node_bytes + edge_bytes;
++  const uint64_t destinations_offset = checkedAdd(
++      offsets_offset, checkedMultiply(n, edge_bytes));
++  const uint64_t expected = checkedAdd(
++      destinations_offset, checkedMultiply(m, node_bytes));
++  if (expected != mapping.bytes) {
++    throw std::runtime_error(std::string(path) + ": BGR size mismatch");
++  }
++
++  return {
++      data + offsets_offset,
++      data + destinations_offset,
++      n,
++      m,
++      node_bytes,
++      edge_bytes,
++  };
++}
++
++uint64_t loadOffset(const BgrView& view, uint64_t index) {
++  const auto* address = view.offsets + index * view.edge_bytes;
++  return view.edge_bytes == 8 ? loadUnaligned<uint64_t>(address)
++                              : loadUnaligned<uint32_t>(address);
++}
++
++double bgrSecondsSince(BgrClock::time_point start) {
++  return std::chrono::duration<double>(BgrClock::now() - start).count();
++}
++
++void printBgrPairStage(const char* operation, BgrClock::time_point start) {
++  std::printf(
++      "GBBS_BGR_PAIR_STAGE {\"operation\":\"%s\",\"seconds\":%.9f}\n",
++      operation, bgrSecondsSince(start));
++  std::fflush(stdout);
++}
++
++}  // namespace
+ 
+ namespace internal {
+ 
+@@ -194,6 +318,137 @@
+       },
+       (std::tuple<uintE, gbbs::empty>*)edges,
+       (std::tuple<uintE, gbbs::empty>*)inEdges);
++}
++
++asymmetric_graph<asymmetric_vertex, gbbs::empty>
++read_unweighted_asymmetric_bgr_pair(
++    const char* forward_fname, const char* reverse_fname) {
++  const auto total_start = BgrClock::now();
++  auto stage_start = BgrClock::now();
++  MappedBgr forward_mapping(forward_fname);
++  MappedBgr reverse_mapping(reverse_fname);
++  const BgrView forward = parseBgr(forward_mapping, forward_fname);
++  const BgrView reverse = parseBgr(reverse_mapping, reverse_fname);
++  if (forward.n != reverse.n || forward.m != reverse.m) {
++    throw std::runtime_error(
++        "forward and reverse BGR dimensions do not match");
++  }
++  if (forward.n > std::numeric_limits<size_t>::max() ||
++      forward.m > std::numeric_limits<size_t>::max()) {
++    throw std::runtime_error("BGR dimensions exceed size_t");
++  }
++  printBgrPairStage("pair.map_and_validate_headers", stage_start);
++
++  const size_t n = static_cast<size_t>(forward.n);
++  const size_t m = static_cast<size_t>(forward.m);
++  vertex_data* v_out_data = nullptr;
++  vertex_data* v_in_data = nullptr;
++  uintE* out_edges = nullptr;
++  uintE* in_edges = nullptr;
++
++  auto release_allocations = [&]() {
++    if (v_out_data != nullptr) gbbs::free_array(v_out_data, n);
++    if (v_in_data != nullptr) gbbs::free_array(v_in_data, n);
++    if (out_edges != nullptr) gbbs::free_array(out_edges, m);
++    if (in_edges != nullptr) gbbs::free_array(in_edges, m);
++  };
++
++  try {
++    stage_start = BgrClock::now();
++    v_out_data = gbbs::new_array_no_init<vertex_data>(n);
++    v_in_data = gbbs::new_array_no_init<vertex_data>(n);
++    out_edges = gbbs::new_array_no_init<uintE>(m);
++    in_edges = gbbs::new_array_no_init<uintE>(m);
++    printBgrPairStage("pair.allocate_graph_arrays", stage_start);
++
++    auto populate_metadata = [&](const BgrView& view, vertex_data* metadata) {
++      std::atomic<bool> invalid(false);
++      parallel_for(0, n, [&](size_t i) {
++        const uint64_t begin = i == 0 ? 0 : loadOffset(view, i - 1);
++        const uint64_t end = loadOffset(view, i);
++        if (begin > end || end > m) {
++          invalid.store(true, std::memory_order_relaxed);
++        }
++        metadata[i].offset = static_cast<uintT>(begin);
++        metadata[i].degree = static_cast<uintT>(end - begin);
++      });
++      if ((n != 0 && loadOffset(view, n - 1) != m) ||
++          invalid.load(std::memory_order_relaxed)) {
++        throw std::runtime_error("invalid BGR CSR offsets");
++      }
++    };
++
++    stage_start = BgrClock::now();
++    populate_metadata(forward, v_out_data);
++    printBgrPairStage("pair.populate_out_metadata", stage_start);
++
++    stage_start = BgrClock::now();
++    populate_metadata(reverse, v_in_data);
++    printBgrPairStage("pair.populate_in_metadata", stage_start);
++
++    auto populate_edges = [&](const BgrView& view, uintE* edges) {
++      constexpr size_t kChunkEntries = 1U << 20;
++      const size_t chunks =
++          (m + kChunkEntries - 1) / kChunkEntries;
++      std::atomic<bool> invalid(false);
++      parallel_for(0, chunks, [&](size_t chunk) {
++        const size_t first = chunk * kChunkEntries;
++        const size_t last = std::min(first + kChunkEntries, m);
++        if (view.node_bytes == sizeof(uintE)) {
++          std::memcpy(
++              edges + first,
++              view.destinations + first * view.node_bytes,
++              (last - first) * sizeof(uintE));
++          for (size_t i = first; i < last; ++i) {
++            if (edges[i] >= n) {
++              invalid.store(true, std::memory_order_relaxed);
++            }
++          }
++        } else {
++          for (size_t i = first; i < last; ++i) {
++            const uint64_t destination = loadUnaligned<uint64_t>(
++                view.destinations + i * view.node_bytes);
++            if (destination >= n) {
++              invalid.store(true, std::memory_order_relaxed);
++            }
++            edges[i] = static_cast<uintE>(destination);
++          }
++        }
++      });
++      if (invalid.load(std::memory_order_relaxed)) {
++        throw std::runtime_error("BGR destination out of range");
++      }
++    };
++
++    stage_start = BgrClock::now();
++    populate_edges(forward, out_edges);
++    printBgrPairStage("pair.copy_and_validate_out_edges", stage_start);
++
++    stage_start = BgrClock::now();
++    populate_edges(reverse, in_edges);
++    printBgrPairStage("pair.copy_and_validate_in_edges", stage_start);
++  } catch (...) {
++    release_allocations();
++    throw;
++  }
++
++  printBgrPairStage("pair.total", total_start);
++  std::printf(
++      "GBBS_BGR_PAIR_RESULT {\"forward\":\"%s\",\"reverse\":\"%s\","
++      "\"vertices\":%zu,\"edges\":%zu}\n",
++      forward_fname, reverse_fname, n, m);
++  std::fflush(stdout);
++
++  return asymmetric_graph<asymmetric_vertex, gbbs::empty>(
++      v_out_data, v_in_data, n, m,
++      [=]() {
++        gbbs::free_array(v_out_data, n);
++        gbbs::free_array(v_in_data, n);
++        gbbs::free_array(out_edges, m);
++        gbbs::free_array(in_edges, m);
++      },
++      reinterpret_cast<std::tuple<uintE, gbbs::empty>*>(out_edges),
++      reinterpret_cast<std::tuple<uintE, gbbs::empty>*>(in_edges));
+ }
+ 
+ asymmetric_graph<asymmetric_vertex, gbbs::empty>
+--- a/gbbs/graph_io.h
++++ b/gbbs/graph_io.h
+@@ -103,6 +103,10 @@
+ read_unweighted_asymmetric_graph(
+     const char* fname, bool mmap, bool binary, char* bytes = nullptr,
+     size_t bytes_size = std::numeric_limits<size_t>::max());
++
++asymmetric_graph<asymmetric_vertex, gbbs::empty>
++read_unweighted_asymmetric_bgr_pair(
++    const char* forward_fname, const char* reverse_fname);
+ 
+ asymmetric_graph<asymmetric_vertex, gbbs::empty>
+ read_unweighted_asymmetric_graph_from_bin(
+--- a/gbbs/benchmark.h
++++ b/gbbs/benchmark.h
+@@ -110,15 +110,26 @@
+  * either symmetric or asymmetric graph inputs */
+ #define generate_main(APP, mutates)                                            \
+   int main(int argc, char* argv[]) {                                           \
+-    gbbs::commandLine P(argc, argv, " [-s] <inFile>");                         \
+-    char* iFile = P.getArgument(0);                                            \
++    gbbs::commandLine P(                                                       \
++        argc, argv,                                                            \
++        " [-s] [-bgr-reverse reverse.bgr] <inFile>");                         \
++    char* iFile = P.getArgument(0);                                            \
++    char* bgr_reverse = P.getOptionValue("-bgr-reverse");                      \
+     bool symmetric = P.getOptionValue("-s");                                   \
+     bool compressed = P.getOptionValue("-c");                                  \
+     bool binary = P.getOptionValue("-b");                                      \
+     bool large = P.getOptionValue("-large");                                   \
+     bool mmap = P.getOptionValue("-m");                                        \
+     size_t rounds = P.getOptionLongValue("-rounds", 3);                        \
+-    if (compressed) {                                                          \
++    if (bgr_reverse != nullptr) {                                              \
++      if (symmetric || compressed || binary) {                                 \
++        std::cerr << "-bgr-reverse cannot be combined with -s, -c, or -b\n";  \
++        return 2;                                                              \
++      }                                                                        \
++      auto G = gbbs::gbbs_io::read_unweighted_asymmetric_bgr_pair(             \
++          iFile, bgr_reverse);                                                 \
++      run_app(G, APP, mutates, rounds)                                         \
++    } else if (compressed) {                                                   \
+       if (symmetric) {                                                         \
+         auto G = gbbs::gbbs_io::read_compressed_symmetric_graph<gbbs::empty>(  \
+             iFile, mmap);                                                      \

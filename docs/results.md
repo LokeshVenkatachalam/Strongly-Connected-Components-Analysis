@@ -679,6 +679,14 @@ seconds**. See the
 and
 [165-row timing trace](https://github.com/LokeshVenkatachalam/Strongly-Connected-Components-Analysis/blob/main/results/gbbs_agatha_wall_profile_node10.csv).
 
+To remove that redundant work, a direct GBBS loader now accepts the existing
+forward and reverse BGR pair. It validates both files, copies their unaligned
+destinations into aligned GBBS arrays, and performs no format conversion,
+edge-pair sort, or transpose construction. A seven-vertex directed fixture
+matched the legacy loader at four SCCs with largest size three, while a
+dimension-mismatched reverse was rejected. See the
+[loader test and usage](https://github.com/LokeshVenkatachalam/Strongly-Connected-Components-Analysis/blob/main/results/gbbs_bgr_pair_small_test_node10.md).
+
 ### UK-2014 load-once comparison on Node 10
 
 Job `42385` mapped and validated the fixed source-verified UK-2014 BGR once,

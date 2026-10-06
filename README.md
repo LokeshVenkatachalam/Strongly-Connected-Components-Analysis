@@ -51,6 +51,7 @@ Wang et al. (2023) dominates, winning 23 of 36 graphs:
 │   ├── run_all.sh        # par-scc benchmark runner
 │   ├── run_modern_scc.sh # Wang/GBBS/iSpan benchmark runner  
 │   ├── parse_gbbs_wall_profile.py # Structured GBBS wall-profile parser
+│   ├── test_gbbs_bgr_pair.py # Direct forward/reverse BGR loader test
 │   └── gen_report.py     # Report generator
 ├── results/              # Benchmark results
 │   ├── Results.md        # Full analysis report
@@ -63,6 +64,7 @@ Wang et al. (2023) dominates, winning 23 of 36 graphs:
 │   ├── parallel_scc_first_three_node10.csv
 │   ├── gbbs_agatha_wall_profile_node10.csv
 │   ├── gbbs_agatha_wall_profile_node10.md
+│   ├── gbbs_bgr_pair_small_test_node10.md
 │   └── exact_tarjan_l40s.csv
 └── docs/                 # GitHub Pages documentation
 ```
