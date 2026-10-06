@@ -669,6 +669,16 @@ The streaming BGR-to-GBBS conversion was a separate 62.281-second preprocessing
 step. The allocated GPU was required only by cluster billing policy and was not
 used by any SCC implementation.
 
+A separate instrumented run measured every high-level conversion, loader,
+reverse-construction, SCC, statistics, and cleanup operation. Its complete
+pipeline wall time was **274.090 seconds (4m 34.090s)**. Of the 173.740-second
+GBBS executable time, **151.956 seconds** built the in-memory graph and reverse
+CSR; integer-sorting `(destination, source)` pairs alone took **126.132
+seconds**. See the
+[full operation breakdown](https://github.com/LokeshVenkatachalam/Strongly-Connected-Components-Analysis/blob/main/results/gbbs_agatha_wall_profile_node10.md)
+and
+[165-row timing trace](https://github.com/LokeshVenkatachalam/Strongly-Connected-Components-Analysis/blob/main/results/gbbs_agatha_wall_profile_node10.csv).
+
 ### UK-2014 load-once comparison on Node 10
 
 Job `42385` mapped and validated the fixed source-verified UK-2014 BGR once,

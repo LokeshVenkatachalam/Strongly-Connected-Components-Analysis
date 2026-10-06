@@ -25,6 +25,12 @@ double secondsSince(Clock::time_point start) {
   return std::chrono::duration<double>(Clock::now() - start).count();
 }
 
+void printStage(const char* stage, Clock::time_point start) {
+  std::cout << std::fixed << std::setprecision(9)
+            << "BGR_TO_GBBS_STAGE {\"stage\":\"" << stage
+            << "\",\"seconds\":" << secondsSince(start) << "}\n";
+}
+
 template <class T>
 T loadUnaligned(const std::uint8_t* address) {
   T value;
@@ -114,7 +120,11 @@ int main(int argc, char** argv) {
 
   try {
     const auto start = Clock::now();
+    auto stage_start = Clock::now();
     Mapping input(input_path);
+    printStage("map_input", stage_start);
+
+    stage_start = Clock::now();
     const std::uint8_t flags = input.data[0];
     if (flags & ~0x0bU)
       throw std::runtime_error("reserved BGR flags");
@@ -153,7 +163,9 @@ int main(int argc, char** argv) {
     if (total_bytes >
         static_cast<std::uint64_t>(std::numeric_limits<off_t>::max()))
       throw std::runtime_error("GBBS output exceeds off_t");
+    printStage("validate_and_size", stage_start);
 
+    stage_start = Clock::now();
     const std::string partial = output_path + ".partial";
     if (::access(output_path.c_str(), F_OK) == 0 ||
         ::access(partial.c_str(), F_OK) == 0)
@@ -161,8 +173,10 @@ int main(int argc, char** argv) {
     int output = ::open(
         partial.c_str(), O_WRONLY | O_CREAT | O_EXCL | O_CLOEXEC, 0644);
     if (output < 0) throw std::runtime_error("cannot create output");
+    printStage("create_output", stage_start);
 
     try {
+      stage_start = Clock::now();
       const int allocation =
           ::posix_fallocate(output, 0, static_cast<off_t>(total_bytes));
       if (allocation != 0) {
@@ -171,15 +185,19 @@ int main(int argc, char** argv) {
             "cannot reserve output: " +
             std::string(std::strerror(errno)));
       }
+      printStage("reserve_output", stage_start);
 
+      stage_start = Clock::now();
       const std::uint64_t sizes = total_bytes;
       writeExact(output, &n, sizeof(n), 0);
       writeExact(output, &m, sizeof(m), 8);
       writeExact(output, &sizes, sizeof(sizes), 16);
       const std::uint64_t zero = 0;
       writeExact(output, &zero, sizeof(zero), header_bytes);
+      printStage("write_header", stage_start);
 
       constexpr std::uint64_t chunk_bytes = 64ULL << 20;
+      stage_start = Clock::now();
       if (edge_bytes == 8) {
 #pragma omp parallel for schedule(static)
         for (std::uint64_t byte = 0; byte < n * 8;
@@ -214,9 +232,11 @@ int main(int argc, char** argv) {
           }
         }
       }
+      printStage("write_offsets", stage_start);
 
       const std::uint64_t output_columns =
           header_bytes + offsets_bytes;
+      stage_start = Clock::now();
       if (node_bytes == 4) {
 #pragma omp parallel for schedule(static)
         for (std::uint64_t byte = 0; byte < destinations_bytes;
@@ -256,7 +276,9 @@ int main(int argc, char** argv) {
           }
         }
       }
+      printStage("write_destinations", stage_start);
 
+      stage_start = Clock::now();
       if (::fsync(output) != 0)
         throw std::runtime_error("fsync failed");
       if (::close(output) != 0) {
@@ -264,8 +286,12 @@ int main(int argc, char** argv) {
         throw std::runtime_error("close failed");
       }
       output = -1;
+      printStage("flush_and_close", stage_start);
+
+      stage_start = Clock::now();
       if (::rename(partial.c_str(), output_path.c_str()) != 0)
         throw std::runtime_error("rename failed");
+      printStage("publish_output", stage_start);
     } catch (...) {
       if (output >= 0) ::close(output);
       ::unlink(partial.c_str());

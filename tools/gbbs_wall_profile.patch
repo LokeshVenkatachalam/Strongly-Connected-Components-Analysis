@@ -1,0 +1,514 @@
+--- a/gbbs/graph_io.cc
++++ b/gbbs/graph_io.cc
+@@ -1,11 +1,32 @@
+ #include "graph_io.h"
+ 
+ #include <sys/mman.h>
++
++#include <chrono>
++#include <cstdio>
+ 
+ namespace gbbs {
+ namespace gbbs_io {
+ 
+ typedef std::pair<uintE, uintE> intPair;
++
++namespace {
++
++using ProfileClock = std::chrono::steady_clock;
++
++double profileSecondsSince(ProfileClock::time_point start) {
++  return std::chrono::duration<double>(ProfileClock::now() - start).count();
++}
++
++void printProfileStage(
++    const char* operation, ProfileClock::time_point start) {
++  std::printf(
++      "GBBS_WALL_OPERATION {\"operation\":\"%s\",\"seconds\":%.9f}\n",
++      operation, profileSecondsSince(start));
++  std::fflush(stdout);
++}
++
++}  // namespace
+ 
+ namespace internal {
+ 
+@@ -246,9 +267,14 @@
+     printf("Error, this function is read from binary\n");
+     return read_unweighted_asymmetric_graph(fname, mmap, bytes, bytes_size);
+   } else {  // binary input
++    const auto loader_start = ProfileClock::now();
+     printf("read graph from %s\n", fname);
++    auto stage_start = ProfileClock::now();
+     size_t n, m;
+     std::pair<char*, size_t> MM = mmapStringFromFile(fname);
++    printProfileStage("loader.map_forward_file", stage_start);
++
++    stage_start = ProfileClock::now();
+     auto mmap_file = MM.first;
+     long* sizes = (long*)mmap_file;
+     n = sizes[0], m = sizes[1];
+@@ -256,16 +282,32 @@
+     uint64_t skip = 3 * sizeof(long) + (n + 1) * sizeof(uintT);
+     uintE* out_edges = (uintE*)(mmap_file + skip);
+     skip += m * sizeof(uintE);
+-
++    printProfileStage("loader.parse_forward_header", stage_start);
++
++    stage_start = ProfileClock::now();
+     auto v_out_data = gbbs::new_array_no_init<vertex_data>(n);
++    printProfileStage("loader.allocate_out_metadata", stage_start);
++
++    stage_start = ProfileClock::now();
+     parallel_for(0, n, [&](size_t i) {
+       v_out_data[i].offset = out_offsets[i];
+       v_out_data[i].degree = out_offsets[i + 1] - v_out_data[i].offset;
+     });
+-
++    printProfileStage("loader.populate_out_metadata", stage_start);
++
++    stage_start = ProfileClock::now();
+     sequence<uintT> tOffsets = sequence<uintT>::uninitialized(n + 1);
++    printProfileStage("loader.allocate_reverse_offsets", stage_start);
++
++    stage_start = ProfileClock::now();
+ 		parallel_for(0, n + 1, [&](size_t i) { tOffsets[i] = INT_T_MAX; });
++    printProfileStage("loader.initialize_reverse_offsets", stage_start);
++
++    stage_start = ProfileClock::now();
+ 		intPair* temp = gbbs::new_array_no_init<intPair>(m);
++    printProfileStage("loader.allocate_edge_pairs", stage_start);
++
++    stage_start = ProfileClock::now();
+ 		parallel_for(0, n, [&](size_t i) {
+ 			uintT o = v_out_data[i].offset;
+ 			uintT deg = v_out_data[i].degree;
+@@ -273,13 +315,20 @@
+ 				temp[o + j] = std::make_pair((out_edges + o)[j], i);
+ 			}
+ 		});
+-
++    printProfileStage("loader.populate_edge_pairs", stage_start);
++
++    stage_start = ProfileClock::now();
+ 		auto temp_seq = gbbs::make_slice(temp, m);
+ 		parlay::integer_sort_inplace(temp_seq,
+ 																	[&](const intPair& p) { return p.first; });
+-
++    printProfileStage("loader.sort_edge_pairs", stage_start);
++
++    stage_start = ProfileClock::now();
+ 		tOffsets[temp_seq[0].first] = 0;
+ 		uintE* in_edges = gbbs::new_array_no_init<uintE>(m);
++    printProfileStage("loader.allocate_reverse_edges", stage_start);
++
++    stage_start = ProfileClock::now();
+ 		in_edges[0] = temp_seq[0].second;
+ 		parallel_for(1, m, [&](size_t i) {
+ 			in_edges[i] = temp_seq[i].second;
+@@ -287,28 +336,42 @@
+ 				tOffsets[temp_seq[i].first] = i;
+ 			}
+ 		});
+-
++    printProfileStage("loader.populate_reverse_edges", stage_start);
++
++    stage_start = ProfileClock::now();
+ 		gbbs::free_array(temp, m);
++    printProfileStage("loader.release_edge_pairs", stage_start);
+ 
+ 
+ 		// fill in offsets of degree 0 vertices by taking closest non-zero
+ 		// offset to the right
++    stage_start = ProfileClock::now();
+ 		auto t_seq = parlay::make_slice(tOffsets.rbegin(), tOffsets.rend());
+ 
+ 		auto M = parlay::minm<uintT>();
+ 		M.identity = m;
+ 		parlay::scan_inclusive_inplace(t_seq, M);
+-
++    printProfileStage("loader.scan_reverse_offsets", stage_start);
++
++    stage_start = ProfileClock::now();
+ 		auto v_in_data = gbbs::new_array_no_init<vertex_data>(n);
++    printProfileStage("loader.allocate_in_metadata", stage_start);
++
++    stage_start = ProfileClock::now();
+ 		parallel_for(0, n, [&](size_t i) {
+ 			v_in_data[i].offset = tOffsets[i];
+ 			v_in_data[i].degree = tOffsets[i + 1] - v_in_data[i].offset;
+ 		});
++    printProfileStage("loader.populate_in_metadata", stage_start);
++    printProfileStage("loader.total", loader_start);
++
+     return asymmetric_graph<asymmetric_vertex, gbbs::empty>(
+         v_out_data, v_in_data, n, m,
+         [=]() {
++          const auto release_start = ProfileClock::now();
+           gbbs::free_array(v_out_data, n);
+           gbbs::free_array(v_in_data, n);
++          printProfileStage("cleanup.release_vertex_metadata", release_start);
+         },
+         (std::tuple<uintE, gbbs::empty>*)out_edges,
+         (std::tuple<uintE, gbbs::empty>*)in_edges);
+--- a/benchmarks/StronglyConnectedComponents/RandomGreedyBGSS16/StronglyConnectedComponents.cc
++++ b/benchmarks/StronglyConnectedComponents/RandomGreedyBGSS16/StronglyConnectedComponents.cc
+@@ -34,9 +34,32 @@
+ 
+ #include "StronglyConnectedComponents.h"
+ 
++#include <chrono>
++#include <cstdio>
++
+ namespace gbbs {
+ template <class Graph>
+ double StronglyConnectedComponents_runner(Graph& G, commandLine P) {
++  using WallClock = std::chrono::steady_clock;
++  static size_t invocation = 0;
++  const size_t current_invocation = invocation++;
++  const char* invocation_kind =
++      current_invocation == 0 ? "warmup" : "measured";
++  const auto runner_start = WallClock::now();
++  auto elapsed = [](WallClock::time_point start) {
++    return std::chrono::duration<double>(
++               WallClock::now() - start)
++        .count();
++  };
++  auto print_operation = [&](const char* operation, double seconds) {
++    std::printf(
++        "GBBS_WALL_OPERATION {\"invocation\":%zu,"
++        "\"kind\":\"%s\",\"operation\":\"%s\","
++        "\"seconds\":%.9f}\n",
++        current_invocation, invocation_kind, operation, seconds);
++    std::fflush(stdout);
++  };
++
+   double beta = P.getOptionDoubleValue("-beta", 1.1);
+   std::cout << "### Application: StronglyConnectedComponents (Strongly Connected Components)" << std::endl;
+   std::cout << "### Graph: " << P.getArgument(0) << std::endl;
+@@ -49,15 +72,40 @@
+     std::cout << "SCC should be run on a directed graph;" << std::endl;
+     exit(0);
+   }
+-  timer scc_t;
+-  scc_t.start();
+-  auto labels = StronglyConnectedComponents(G, beta);
+-  double tt = scc_t.stop();
+-  if (P.getOption("-stats")) {
+-    num_scc(labels);
+-    scc_stats(labels);
++  double tt = 0.0;
++  double scc_wall_seconds = 0.0;
++  double count_seconds = 0.0;
++  double stats_seconds = 0.0;
++  double labels_release_seconds = 0.0;
++  {
++    const auto scc_start = WallClock::now();
++    timer scc_t;
++    scc_t.start();
++    auto labels = StronglyConnectedComponents(G, beta);
++    tt = scc_t.stop();
++    scc_wall_seconds = elapsed(scc_start);
++    print_operation("scc", scc_wall_seconds);
++
++    if (P.getOption("-stats")) {
++      auto operation_start = WallClock::now();
++      num_scc(labels);
++      count_seconds = elapsed(operation_start);
++      print_operation("count_components", count_seconds);
++
++      operation_start = WallClock::now();
++      scc_stats(labels);
++      stats_seconds = elapsed(operation_start);
++      print_operation("largest_component_stats", stats_seconds);
++    }
++
++    const auto release_start = WallClock::now();
++    labels.clear();
++    labels_release_seconds = elapsed(release_start);
++    print_operation("release_labels", labels_release_seconds);
+   }
+ 
++  const double runner_seconds = elapsed(runner_start);
++  print_operation("runner_total", runner_seconds);
+   std::cout << "### Running Time: " << tt << std::endl;
+   std::cout << "### ------------------------------------" << std::endl;
+   return tt;
+--- a/benchmarks/StronglyConnectedComponents/RandomGreedyBGSS16/StronglyConnectedComponents.h
++++ b/benchmarks/StronglyConnectedComponents/RandomGreedyBGSS16/StronglyConnectedComponents.h
+@@ -26,6 +26,9 @@
+ #include "gbbs/helpers/resizable_table.h"
+ #include "gbbs/gbbs.h"
+ 
++#include <chrono>
++#include <cstdio>
++
+ // The include below is currently not useful, as the majority of out/in-degree
+ // one vertices are removed in a single round of peeling (so multiple rounds are
+ // not necessary, at least on the graphs we tested on).
+@@ -42,6 +45,27 @@
+ 
+ float multi_search_time;
+ float table_resize_time;
++
++using SccProfileClock = std::chrono::steady_clock;
++
++inline double sccProfileSecondsSince(SccProfileClock::time_point start) {
++  return std::chrono::duration<double>(
++             SccProfileClock::now() - start)
++      .count();
++}
++
++inline void printSccProfileOperation(
++    size_t invocation,
++    const char* operation,
++    double seconds,
++    size_t round = 0) {
++  std::printf(
++      "GBBS_SCC_WALL {\"invocation\":%zu,\"operation\":\"%s\","
++      "\"round\":%zu,\"seconds\":%.9f}\n",
++      invocation, operation, round, seconds);
++  std::fflush(stdout);
++}
++
+ // hash32 is sufficient
+ struct hash_kv {
+   uint64_t operator()(const K& k) { return parlay::hash64(k); }
+@@ -194,6 +218,10 @@
+ 
+ template <class Graph>
+ inline sequence<label_type> StronglyConnectedComponents(Graph& GA, double beta = 1.5) {
++  static size_t profile_invocation = 0;
++  const size_t invocation = profile_invocation++;
++  const auto algorithm_start = SccProfileClock::now();
++  auto operation_start = SccProfileClock::now();
+   multi_search_time = 0;
+   table_resize_time = 0;
+   float first_round_time = 0;
+@@ -231,10 +259,15 @@
+   initt.stop();
+   initt.next("init");
+   std::cout << "### init_time " <<initt.total_time() << std::endl;
++  printSccProfileOperation(
++      invocation, "algorithm.initialize",
++      sccProfileSecondsSince(operation_start));
+ 
+   // Run the first search (BFS)
+   {
++    const auto first_round_start = SccProfileClock::now();
+     timer hd; hd.start();
++    operation_start = SccProfileClock::now();
+     auto deg_im_f = [&](size_t i) {
+       return std::make_tuple(i, GA.get_vertex(i).out_degree());
+     };
+@@ -248,12 +281,26 @@
+     std::tuple<uintE, uintE> sAndD =
+         parlay::reduce(deg_im, monoid);
+     uintE start = std::get<0>(sAndD);
++    printSccProfileOperation(
++        invocation, "algorithm.select_max_degree_pivot",
++        sccProfileSecondsSince(operation_start));
+ 
+ 
+     if (!(labels[start] & TOP_BIT)) {
+       set_first = true;
++      operation_start = SccProfileClock::now();
+       auto in_visits = first_search(GA, labels, start, label_offset, in_edges);
++      printSccProfileOperation(
++          invocation, "algorithm.initial_backward_search",
++          sccProfileSecondsSince(operation_start));
++
++      operation_start = SccProfileClock::now();
+       auto out_visits = first_search(GA, labels, start, label_offset);
++      printSccProfileOperation(
++          invocation, "algorithm.initial_forward_search",
++          sccProfileSecondsSince(operation_start));
++
++      operation_start = SccProfileClock::now();
+       size_t label = label_offset;
+       parallel_for(0, n, [&] (size_t i) {
+         bool inv = in_visits[i];
+@@ -264,6 +311,9 @@
+           labels[i] = label; // Reachabel from the Big SCC, but not in it.
+         }
+       });
++      printSccProfileOperation(
++          invocation, "algorithm.initial_classify_vertices",
++          sccProfileSecondsSince(operation_start));
+       label_offset += 1;
+       hd.stop();
+       hd.next("big scc time");
+@@ -272,14 +322,23 @@
+       hd.stop();
+       first_round_time += hd.total_time();
+     }
+-  }
+-
++    printSccProfileOperation(
++        invocation, "algorithm.initial_round_total",
++        sccProfileSecondsSince(first_round_start));
++  }
++
++  operation_start = SccProfileClock::now();
+   auto Q = parlay::filter(P, [&](uintE v) { return !(labels[v] & TOP_BIT); });
++  printSccProfileOperation(
++      invocation, "algorithm.filter_initial_residual",
++      sccProfileSecondsSince(operation_start));
+   #ifdef DEBUG
+   std::cout << "After first round, Q = " << Q.size()
+             << " vertices remain. Total done = " << (n - Q.size()) << "\n";
+   #endif
+   while (finished < Q.size()) {
++    const auto round_wall_start = SccProfileClock::now();
++    operation_start = SccProfileClock::now();
+     timer rt;
+     rt.start();
+     // Running searches between P[cur_offset, end)
+@@ -295,6 +354,9 @@
+         vs_size, [&](size_t i) { return Q[round_offset + i]; });
+     auto centers = parlay::filter(
+         centers_pre_filter, [&](uintE v) { return !(labels[v] & TOP_BIT); });
++    printSccProfileOperation(
++        invocation, "algorithm.select_round_centers",
++        sccProfileSecondsSince(operation_start), cur_round);
+ 
+     #ifdef DEBUG
+     std::cout << "round = " << cur_round << " n_centers = " << centers.size()
+@@ -303,7 +365,12 @@
+               << (Q.size() - finished) << "\n";
+     #endif
+ 
+-    if (centers.size() == 0) continue;
++    if (centers.size() == 0) {
++      printSccProfileOperation(
++          invocation, "algorithm.round_total",
++          sccProfileSecondsSince(round_wall_start), cur_round);
++      continue;
++    }
+ 
+     size_t cur_label_offset = label_offset;
+     label_offset += centers.size();
+@@ -312,10 +379,20 @@
+       timer ft;
+       ft.start();
+       uintE start = centers[0];
++      operation_start = SccProfileClock::now();
+       auto in_visits =
+           first_search(GA, labels, start, cur_label_offset, in_edges);
++      printSccProfileOperation(
++          invocation, "algorithm.round_backward_search",
++          sccProfileSecondsSince(operation_start), cur_round);
++
++      operation_start = SccProfileClock::now();
+       auto out_visits = first_search(GA, labels, start, cur_label_offset);
+-
++      printSccProfileOperation(
++          invocation, "algorithm.round_forward_search",
++          sccProfileSecondsSince(operation_start), cur_round);
++
++      operation_start = SccProfileClock::now();
+       size_t label = cur_label_offset;
+ 
+       parallel_for(0, n, [&] (size_t i) {
+@@ -327,6 +404,9 @@
+           labels[i] = label;
+         }
+       });
++      printSccProfileOperation(
++          invocation, "algorithm.round_classify_vertices",
++          sccProfileSecondsSince(operation_start), cur_round);
+       ft.stop();
+       ft.next("first round time");
+       if (!set_first){
+@@ -334,14 +414,21 @@
+       }else{
+         multi_search_time += ft.total_time();
+       }
++      printSccProfileOperation(
++          invocation, "algorithm.round_total",
++          sccProfileSecondsSince(round_wall_start), cur_round);
+       continue;
+     }
+ 
+     timer ins; ins.start();
++    operation_start = SccProfileClock::now();
+     auto centers_2 = centers;
+     auto in_f = vertexSubset(n, std::move(centers));
+     auto in_table =
+         multi_search(GA, labels, bits, in_f, cur_label_offset, in_edges);
++    printSccProfileOperation(
++        invocation, "algorithm.round_multi_backward_search",
++        sccProfileSecondsSince(operation_start), cur_round);
+     #ifdef DEBUG
+     std::cout << "Finished in search"
+               << "\n";
+@@ -349,8 +436,12 @@
+     ins.stop(); ins.next("insearch time");
+ 
+     timer outs; outs.start();
++    operation_start = SccProfileClock::now();
+     auto out_f = vertexSubset(n, std::move(centers_2));
+     auto out_table = multi_search(GA, labels, bits, out_f, cur_label_offset);
++    printSccProfileOperation(
++        invocation, "algorithm.round_multi_forward_search",
++        sccProfileSecondsSince(operation_start), cur_round);
+     #ifdef DEBUG
+     std::cout << "in_table, m = " << in_table.m << " ne = " << in_table.ne
+               << "\n";
+@@ -375,7 +466,11 @@
+         gbbs::write_max(&labels[v], label);
+       }
+     };
++    operation_start = SccProfileClock::now();
+     smaller_t.map(map_f);
++    printSccProfileOperation(
++        invocation, "algorithm.round_intersect_searches",
++        sccProfileSecondsSince(operation_start), cur_round);
+ 
+     // set the subproblems
+     auto sp_map = [&](const std::tuple<K, V>& kev) {
+@@ -385,17 +480,31 @@
+       // read, compare and fail, as the top bit is already set.
+       gbbs::write_max(&labels[v], label);
+     };
++    operation_start = SccProfileClock::now();
+     larger_t.map(sp_map);
++    printSccProfileOperation(
++        invocation, "algorithm.round_partition_residual",
++        sccProfileSecondsSince(operation_start), cur_round);
+ 
+     rt.stop();
+     rt.next("Round time");
+-  }
+-
++    printSccProfileOperation(
++        invocation, "algorithm.round_total",
++        sccProfileSecondsSince(round_wall_start), cur_round);
++  }
++
++  operation_start = SccProfileClock::now();
+   parallel_for(0, labels.size(), [&] (size_t i) {
+     labels[i] = (labels[i] & VAL_MASK) - 1;
+   });
++  printSccProfileOperation(
++      invocation, "algorithm.normalize_labels",
++      sccProfileSecondsSince(operation_start));
+   std::cout << "### multi_search time " << multi_search_time - table_resize_time << std::endl;
+   std::cout << "### hash table resize time " << table_resize_time << std::endl;
++  printSccProfileOperation(
++      invocation, "algorithm.total",
++      sccProfileSecondsSince(algorithm_start));
+   return labels;
+ }
+ 
+--- a/makefile.variables
++++ b/makefile.variables
+@@ -39,7 +39,7 @@
+ 	-Wpointer-arith \
+ 	-Wvla \
+ 	-std=c++17 \
+-	-march=native \
++	-march=znver2 \
+ 	-mcx16 \
+ 	$(OPT) \
+ 	$(INTT) \
